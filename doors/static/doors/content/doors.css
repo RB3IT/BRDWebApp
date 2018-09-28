@@ -1,0 +1,140 @@
+.menu-item {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.itemlabel {
+    font-size: 1.25em;
+    font-weight: bold;
+}
+
+.component {
+    border-bottom: groove 1px;
+}
+.component > h4 {
+    font-size:1.5em;
+}
+
+
+.toggleable {
+    height: 0px;
+    overflow:hidden;
+    -webkit-transition: height, .1s linear;
+    -moz-transition: height, .1s linear;
+    -ms-transition: height, .1s linear;
+    -o-transition: height, .1s linear;
+    transition: height, .1s linear;
+}
+
+    .toggleable.on {
+        height: auto;
+        -webkit-transition: height, .1s linear;
+        -moz-transition: height, .1s linear;
+        -ms-transition: height, .1s linear;
+        -o-transition: height, .1s linear;
+        transition: height, .1s linear;
+    }
+
+.boxed {
+    border: none;
+}
+    .boxed.on{
+        border: solid thin;
+        padding: .5em;
+        margin: .5em;
+    }
+
+label > input:read-only {
+    background-color: rgb(220,220,220);
+}
+
+label > * {
+    margin-left: 3px;
+}
+
+.popup-icon:before {
+    cursor: pointer;
+    content: "search";
+}
+
+.door {
+    border: solid 1px;
+    border-radius: .6em;
+    display: inline-block;
+}
+
+.doorheader {
+    background-color: lawngreen;
+}
+
+.componentheader {
+    background-color: #CBECFB;
+}
+
+.component2 > tbody td {
+    background-color: #eee;
+}
+
+    .component2 > tbody td:last-child {
+        border-radius: 0 0 0.6em 0;
+    }
+
+.component2 > tbody tr:last-child > td:first-child {
+    border-radius: 0 0 0 0.6em;
+}
+
+.component2 > tbody tr:last-child > td:last-child {
+    border-radius: 0 0 0.6em 0;
+}
+
+.doorheader, .componentheader {
+    border-radius: 0.6em 0.6em 0 0;
+}
+
+.headerrow {
+    background-color: lightgray;
+}
+
+.door td {
+    padding: 5px;
+}
+
+div.popup {
+    visibility: hidden;
+    top: 50%;
+    left: 50%;
+    max-width: 50%;
+    max-height: 75%;
+    padding: 1em;
+    align-items: center;
+    text-align: center;
+}
+
+div.popup > *{
+    padding:.5em;
+}
+
+.popup-table{
+    border:1px solid;
+    border-collapse:collapse;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.popup-table caption{
+    font: 1.75em bolder;
+}
+
+.popup-table tr>td:first-child{
+    font-weight:bold;
+    background-color: #eee;
+}
+
+    .popup-table td {
+        padding: .25em;
+        min-width: 2em;
+    }
+
+.invalid{
+    background-color:rgba(250,0,0,25);
+}

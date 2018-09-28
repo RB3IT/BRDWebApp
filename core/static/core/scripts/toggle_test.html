@@ -1,0 +1,63 @@
+﻿<html lang="en" xmlns="http://www.w3.org/1999/xhtml"><head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../content/toggle.css">
+    <script src="../scripts/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+    <label class="toggle" data-checked></label>
+    <script>
+        function generateToggle(options,elements) {
+        /* Dynamically Generates a toggle based on the given selector and with the given options.
+
+            options is an object with any of the following keys:
+                on: Text to accompany the widget when it is in the "on" position (checked).
+                    The default value is "On".
+                off: Text to accompany the widget when it is in the "off" position (unchecked).
+                    The default value is "Off".
+                callback: Sets the callback for the widgets, based on .change(). Default null (no callback).
+
+            These options are overwritten by the following on-element attributes (option : attribute) :
+                on : data-on
+                off : data-off
+                callback : data-callback
+
+            elements should be a JQuery array of elements. If null, $(".toggle:not(:has(>input))")
+            is used to find the elements. Only selected elements with class ".toggle" will be processed.
+        */
+        if (!elements || typeof elements == "undefined"){
+            elements = $(".toggle:not(:has(>input))");
+        }
+        else{
+            elements = elements.filter(".toggle");
+        };
+        if (!elements){ return; };
+        let opts = {on:"On",off:"Off",callback:null, checked:false};
+        if (typeof options != "undefined"){
+            for (let k in opts){
+                if (options.hasOwnProperty(k)){
+                    opts[k] = options[k];
+                };
+            };
+        };
+        elements.each(function (index) {
+            let eleopts = {};
+            for (let attr of ['on', 'off', 'callback']) {
+                if ($(this).attr(`data-${attr}`) == null) { eleopts[attr] = opts[attr]; } else { eleopts[attr] = $(this).attr(`data-${attr}`); };
+            };
+            if (                                                                        // Checked if:
+                (typeof $(this).attr('data-checked') != "undefined" || opts.checked)    // On-Element data-checked or defaults is truthy
+                && $(this).attr('data-checked') != "false")                             // And On-Element data-checked is not "false"
+                ){ eleopts.checked = "checked";}
+            else{eleopts.checked = "";};                                                // Not Checked if: data-checked not set and default is false || data-checked == false
+            $(this).append(`<input type="checkbox" ${eleopts.checked}/><div data-off="${eleopts.off}" data-on="${eleopts.on}"></div>`);
+            if (eleopts.callback){
+                $(this).change(eleopts.callback);
+            };
+            }
+        );
+    };
+    generateToggle();
+    </script>
+
+</body></html>

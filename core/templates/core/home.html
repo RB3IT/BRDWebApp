@@ -1,0 +1,21 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+{% endblock %}
+
+{% block content %}
+<div style="width:100%;text-align:center; margin-bottom:2em;">
+    <img src="{% static 'core/images/sitelogo.jpg' %}"/>
+</div>
+<div style="width:100%;height:50%;text-align:center;display:table;">
+    <div class="floatleft vcenter">
+        <button type="button" class="beveled noglow" style="font-size:2em; background-color:lawngreen;" onclick="location.href='{% url 'doorshome' %}'"><a href="{% url 'doorshome' %}" class="nonlink">Orders</a></button>
+        <button type="button" class="beveled noglow" style="font-size:2em; background-color:indianred;" onclick="location.href='{% url 'inventoryhome' %}'"><a href="{% url 'inventoryhome' %}" class="nonlink" style="color:white;">Inventory</a></button>
+        <button type="button" class="beveled noglow" style="font-size:2em; background-color:aqua;" onclick="location.href='{% url 'toolshome' %}'"><a href="{% url 'toolshome' %}" class="nonlink">Tools</a></button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

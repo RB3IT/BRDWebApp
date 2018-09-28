@@ -1,0 +1,150 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        .amounttable, td {
+            border: 1px solid #CDCDCD;
+            border-collapse: collapse;
+        }
+            .amounttable > thead {
+                background-color: #4CAF50;
+                color: white;
+            }
+            .amounttable > tfoot {
+                background-color: #F2F3F4;
+            }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="center">
+        <div class="floatleft">
+            <label>Amount to Split <input id="splitamount" type="number" value="0.00"/></label>
+        </div>
+        <table id="costtable" class="amounttable">
+            <thead>
+                <tr>
+                    <td></td>
+                    <td>Base Cost</td>
+                    <td>Percent Total</td>
+                    <td>Split Amount</td>
+                    <td>Total Cost</td>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><i class="add-button material-icons"></i></td>
+                    <td id="tcost">0.0</td>
+                    <td id="tperc">0.0</td>
+                    <td id="tsplit">0.0</td>
+                    <td id="ttcost">0.0</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var table = $("#costtable");
+
+    function checkZero(value) {
+        /* Converts Falsey values to 0 */
+        return parseFloat(value) || 0.00
+    };
+
+    function enterBlur(e) {
+        /* Convenience function to have inputs blur on enter key */
+        if (e.keyCode == 13) {
+            $(e.target).blur();
+        };
+    };
+
+    function updateTable() {
+        /* Updates the values in the Table */
+        let amount = $("#splitamount").val();
+        let rows = table.children("tbody").children("tr");
+        let inputs = rows.find('input[data-val=tcost]');
+        let tcost = 0.0;
+        let tperc = 0.0;
+        let tsplit = 0.0;
+        let ttcost = 0.0;
+        // Sum inputs
+        inputs.each(function () {
+            tcost += checkZero($(this).val());
+        });
+
+        for (let row of rows) {
+            /* Set numbers for each row and update totals */
+            row = $(row);
+            let v = row.find('input[data-val=tcost]');
+            if (!v) {
+                continue;
+            };
+            // Do calculations
+            let cost = checkZero(v.val());
+            let perc = cost / tcost;
+            if (isNaN(perc)) {
+                perc = 0;
+            };
+            let split = perc * amount;
+            let scost = cost + split;
+
+            // Set this row
+            row.find('td[data-val=tperc]').html(`${perc.toFixed(2)}`);
+            row.find('td[data-val=tsplit]').html(`${split.toFixed(2)}`);
+            row.find('td[data-val=ttcost]').html(`${scost.toFixed(2)}`);
+
+            // Add to totals
+            tperc += perc;
+            tsplit += split;
+            ttcost += scost;
+        };
+
+        // Set Footer Totals
+        $("#tcost").html(`${tcost.toFixed(2)}`);
+        $("#tperc").html(`${tperc.toFixed(2)}`);
+        $("#tsplit").html(`${tsplit.toFixed(2)}`);
+        $("#ttcost").html(`${ttcost.toFixed(2)}`);
+    };
+
+    function addRow() {
+        /* Adds a row to the Costs Table and rebind */
+        table.children("tbody").append($(`
+    <tr>
+        <td><i class="cancel-button material-icons"></i></td>
+        <td><input type="number" data-val="tcost" value="0.00"/></td>
+        <td data-val="tperc"></td>
+        <td data-val="tsplit"></td>
+        <td data-val="ttcost"></td>
+    </tr>`));
+
+        bindInputs();
+    };
+
+    function removeRow(event) {
+        /* Removes the clicked row */
+        let el = $(event.target);
+        let row = el.parents("tr")[0]
+        row.remove();
+    };
+
+    function bindInputs() {
+        /* Binds Table Inputs (data-val="tcost") to recalculate on blur and blur on Enter Key, and Cancel button to remove Row */
+        $('input[data-val=tcost]').keyup(enterBlur).blur(updateTable);
+        $('i.cancel-button').click(removeRow);
+    };
+
+    $(document).ready(
+        function () {
+            addRow();
+            $("#splitamount").keyup(enterBlur).blur(updateTable);
+            $('i.add-button').click(addRow);
+        }
+    );
+</script>
+{% endblock %}

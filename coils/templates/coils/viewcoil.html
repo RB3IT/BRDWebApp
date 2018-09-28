@@ -1,0 +1,56 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        div.centerall {
+            text-align:center;
+        }
+        div.centerall>* {
+            margin-left:auto;
+            margin-right:auto;
+        }
+        table>caption {
+            font-size:2em;
+            font-weight:bold;
+        }
+        table~tr:first-child{
+            font-weight:bold;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="centerall">
+        <img src="{{coilqr}}" />
+        <table>
+            <caption>Coil {{coil.pk}}</caption>
+            <tbody>
+                <tr>
+                    <td>Weight</td>
+                    <td>{{coil.weight}}</td>
+                </tr>
+                <tr>
+                    <td>Width</td>
+                    <td>{{coil.width}}</td>
+                </tr>
+                <tr>
+                    <td>Date Recieved</td>
+                    <td>{{coil.recieved}}</td>
+                </tr>
+                <tr>
+                    <td>Date Opened</td>
+                    <td>{{coil.opened}}</td>
+                </tr>
+                <tr>
+                    <td>Date Finished</td>
+                    <td>{{coil.finished}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}

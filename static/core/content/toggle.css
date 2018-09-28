@@ -1,0 +1,111 @@
+*,
+*:before,
+*:after {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.toggle-component {
+    margin-bottom: 3rem;
+}
+
+    .toggle-component p {
+        margin: .7rem 0;
+    }
+
+.toggle {
+    display:table;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    margin-bottom: 1rem;
+}
+
+    .toggle > div {
+        display: table;
+    }
+
+    .toggle input {
+        border: 0;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        width: 1px;
+    }
+
+    .toggle input:focus + div {
+        text-decoration: underline;
+    }
+
+    .toggle> div > div {
+        cursor: pointer;
+        border-radius: 2rem;
+        width: 5rem;
+        height: 2rem;
+        background: white;
+        border: 2px solid black;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        position: relative;
+        -webkit-transition: 200ms ease-out;
+        transition: 200ms ease-out;
+        font-size: 0;
+    }
+
+        .toggle > div > div:hover {
+            -webkit-box-shadow: 0 0 6px #005ca4;
+            box-shadow: 0 0 6px #005ca4;
+        }
+
+        .toggle> div > div:before {
+            will-change: translate;
+            display: block;
+            position: absolute;
+            top: calc(50% - .5rem);
+            left: .5rem;
+            content: '';
+            width: 1rem;
+            height: 1rem;
+            background: black;
+            border-radius: 50%;
+            -webkit-transition: 200ms;
+            transition: 200ms;
+        }
+
+    .toggle> div > span {
+        display: table-cell;
+        vertical-align: middle;
+        padding-left: .25em;
+        font-size: 1.5rem;
+        font-weight: bold;
+        pointer-events: none;
+    }
+
+    .toggle > div > span:after {
+        content: attr(data-off);
+    }
+
+    .toggle input:checked + div {
+        background: #0078d7;
+        border-color: #0078d7;
+    }
+
+        .toggle input:checked + div:before {
+            color: #0078d7;
+            -webkit-transform: translateX(280%);
+            transform: translateX(280%);
+            -webkit-transform: translateX(calc(2.5*100% + 4px));
+            transform: translateX(calc(2.5*100% + 4px));
+            background: white;
+        }
+
+        .toggle input:checked ~ span:after {
+            content: attr(data-on);
+        }
+
+input:focus ~ span:after {
+    text-decoration: underline;
+}

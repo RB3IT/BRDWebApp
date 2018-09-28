@@ -1,0 +1,197 @@
+body {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+/* styles for validation helpers */
+.field-validation-error {
+    color: #b94a48;
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+input.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+input[type="checkbox"].input-validation-error {
+    border: 0 none;
+}
+
+.validation-summary-errors {
+    color: #b94a48;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+
+.nonlink {
+    /* Remove Link Styling */
+    text-decoration: none;
+    color: black;
+}
+
+.beveled {
+    /* Beveled Item */
+    padding: .5em;
+    margin: .5em;
+    border: 1px solid #000000;
+    -moz-box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
+    -webkit-box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
+    box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
+}
+
+button.beveled:active {
+    -moz-box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
+    -webkit-box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
+    box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
+}
+
+.floatleft {
+    /* Floats a div's content left-to-right.
+
+        Technically, only one of float-left and inline-flex are necessary,
+        but inline-flex is not completely covered.
+    */
+    /*  Float left disabled for now in order to properly center
+        float:left;*/
+    display:inline-flex;
+}
+
+    .floatleft > * {
+        margin: 5px;
+    }
+
+    .floatleft:after {
+        clear:both;
+        display:block;
+    }
+
+.centered{
+    align-content:center;
+    align-items: center;
+    text-align: center;
+}
+
+.noglow:active {
+    /* Removes Outline from Focused Button */
+    outline: 0px;
+}
+
+.section {
+    border: solid 1px;
+    overflow:auto;
+    margin: 3px;
+    padding:3px;
+}
+.section > h3 {
+    margin:1em;
+}
+
+.vcenter {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.cancel-button:before {
+    color: red;
+    cursor: pointer;
+    vertical-align: middle;
+    content: "cancel";
+}
+
+.false-icon:before{
+    color: red;
+    vertical-align:middle;
+    content:"close"
+}
+
+.true-icon:before {
+    color: lawngreen;
+    vertical-align: middle;
+    content: "check"
+}
+
+.add-button:before{
+    color:lawngreen;
+    cursor: pointer;
+    vertical-align: middle;
+    content:"add_circle";
+}
+
+.errorbubble-container {
+    position: absolute;
+    z-index: 50;
+}
+
+.errorbubble {
+    position: relative;
+    border: 1px solid;
+    border-radius: 3px;
+    padding: 0 .25em;
+    background: white;
+    -moz-box-shadow: 2px 2px 2px rgba(0,0,0,.4);
+    -webkit-box-shadow: 2px 2px 2px rgba(0,0,0,.4);
+    box-shadow: 2px 2px 2px rgba(0,0,0,.4);
+}
+
+    .errorbubble > span:first-of-type:before {
+        content: "!";
+        font: comic-sans;
+        font-weight: bold;
+        border: 1px;
+        background-color: orange;
+        color: white;
+        margin: .25em .5em .25em .25em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1em;
+        border-radius: 50%;
+        vertical-align: middle;
+    }
+
+    .errorbubble:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 7px;
+        width: 0;
+        height: 0;
+        border: 5px solid transparent;
+        border-bottom-color: black;
+        border-top: 0;
+        margin-left: -5px;
+        margin-top: -5px;
+    }
+
+    .errorbubble:after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 7px;
+        width: 0;
+        height: 0;
+        border: 5px solid transparent;
+        border-bottom-color: white;
+        border-top: 0;
+        margin-left: -5px;
+        margin-top: -4px;
+    }

@@ -1,0 +1,108 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        tr.checked {
+            background-color:rgba(0,255,255,.25);
+        }
+        .icon-checkbox input[type="checkbox"],
+        .icon-checkbox .checked {
+            display:none;
+        }
+            .icon-checkbox input[type="checkbox"]:checked ~ .checked {
+                display:inline-block;
+            }
+            .icon-checkbox input[type="checkbox"]:checked ~ .unchecked {
+                display:none;
+            }
+    </style>
+{% endblock %}
+
+{% block content %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Max</th>
+            <th>Reorder</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Flag</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in supplies%}
+        <tr>
+            <td>{{item.name}}</td>
+            <td>{{item.max_quantity}}</td>
+            <td>{{item.reorder_quantity}}</td>
+            <td>{{item.unit}}</td>
+            <td>
+                <input class="autoapi" data-name="{{item.name}}" type="number" min="0" value="{{item.quantity}}"/>
+            </td>
+            <td>
+                <label class="icon-checkbox">
+                    <input class="autoflag" data-name="{{item.name}}" type="checkbox"/>
+                    <i class="material-icons checked" style="color:lawngreen;">assignment_turned_in </i>
+                    <i class="material-icons unchecked" style="color:red;">add_shopping_cart </i>
+                </label>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $(".autoapi").blur(postapi_value).keypress(checkEnter);
+        $(".autoflag").change(postapi_flag);
+    })
+
+    function checkEnter(e) {
+        // Shortcut function for firing calculation on the Enter/Return keypress
+        if (e.which == 13) {
+            e.target.blur();
+        };
+    };
+
+    function checkrow(ele){
+        let row = ele.parents("tr");
+        row.addClass("checked");
+    };
+
+    function postapi_value(event) {
+        let ele = $(event.target);
+        let name = ele.attr("data-name");
+        let value = ele.val();
+
+        $.ajax({
+            url: "{% url 'shoppinglist_api' %}",
+            success: function (data) {
+        if (data.success){
+            checkrow(ele);
+        };
+    },
+            data: { 'type' : 'value', name : name, value : value }
+        });
+    };
+
+    function postapi_flag(event) {
+        let ele = $(event.target);
+        let name = ele.attr("data-name");
+        let value = ele[0].checked;
+
+        $.ajax({
+            url: "{% url 'shoppinglist_api' %}",
+            success: function (data) {
+        if (data.success){
+            checkrow(ele);
+        };
+    },
+            data: { type : 'flag' , name: name, value : value }
+        });
+    };
+</script>
+{% endblock %}

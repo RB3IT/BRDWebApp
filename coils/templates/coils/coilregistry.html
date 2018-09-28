@@ -1,0 +1,30 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+{% endblock %}
+
+{% block content %}
+<form action="{% url 'coilregistry'  %}" method="post">
+    {% csrf_token %}
+    <table>
+        <tr>
+            <td>Coils</td>
+            <td><input type="number" name="coilcount"/></td>
+        </tr>
+        <tr>
+            <td>Weight</td>
+            <td><input type="number" name="weight"/></td>
+        </tr>
+        <tr>
+            <td>Width</td>
+            <td><input type="number" name="width"/></td>
+        </tr>
+    </table>
+    <input type="submit" value="Submit">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'core/scripts/security.js' %}"></script>
+{% endblock %}

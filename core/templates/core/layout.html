@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRD Services</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'core/content/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'core/content/site.css' %}" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    <div id="navbar" class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container snackbar-container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="/" class="navbar-brand">BRD Services</a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>Inventory</li>
+                </ul>
+                {% include 'core/loginpartial.html' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container body-content">
+{% block content %}{% endblock %}
+        <hr/>
+        <footer>
+            <p>&copy; Bristol Rolling Doors</p>
+        </footer>
+    </div>
+    <script type="text/javascript" src="{%static 'core/scripts/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'core/scripts/modernizr-2.6.2.js' %}"></script>
+    <script src="{% static 'core/scripts/bootstrap.js' %}"></script>
+    <script src="{% static 'core/scripts/respond.js' %}"></script>
+    <script src="{% static 'core/scripts/snackbar.js' %}"></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

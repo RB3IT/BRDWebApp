@@ -1,0 +1,25 @@
+﻿{% extends "core/layout.html"%}
+{% block content %}
+<h3>Select Month and Year for Inventory</h3>
+<form action="/inventory/index">
+    {% now "F" as current_month %}
+    <div style="margin-bottom:5px;"><span style="font-weight:bold;font-size:1.25em;margin-right:1em;">Month:</span><select name="month">
+        <option value=1 {% if current_month == 1 %} selected {% endif %}>January</option>
+        <option value=2 {% if current_month == 2 %} selected {% endif %}>February</option>
+        <option value=3 {% if current_month == 3 %} selected {% endif %}>March</option>
+        <option value=4 {% if current_month == 4 %} selected {% endif %}>April</option>
+        <option value=5 {% if current_month == 5 %} selected {% endif %}>May</option>
+        <option value=6 {% if current_month == 6 %} selected {% endif %}>June</option>
+        <option value=7 {% if current_month == 7 %} selected {% endif %}>July</option>
+        <option value=8 {% if current_month == 8 %} selected {% endif %}>August</option>
+        <option value=9 {% if current_month == 9 %} selected {% endif %}>September</option>
+        <option value=10 {% if current_month == 10 %} selected {% endif %}>October</option>
+        <option value=11 {% if current_month == 11 %} selected {% endif %}>November</option>
+        <option value=12 {% if current_month == 12 %} selected {% endif %}>December</option>
+    </select></div>
+    <div style="margin-bottom:5px;"><span style="font-weight:bold;font-size:1.25em;margin-right:1em;">Year:</span><input name ="year" type="number" min="1900" max="2100" value="{% now 'Y' %}" /></div>
+    <input type="submit" value="Submit" />
+</form>
+
+<button type="button" class="beveled noglow" style="font-size:2em; background-color:aqua;" onclick="location.href='{% url 'coilhome' %}'"><a href="{% url 'coilhome' %}" class="nonlink">Coils</a></button>
+{% endblock %}

@@ -1,0 +1,133 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        table.item-info td{
+            padding-bottom:1em;
+        }
+        table.item-info td:nth-child(1){
+            font-weight:bold;
+            padding-right:5px;
+            font-size:1.25em;
+        }
+
+        .column{
+            padding-left:5px;
+            padding-right:5px;
+        }
+
+        .inlineclear {
+            float:left;
+        }
+
+            .inlineclear::after {
+                clear:both;
+            }
+
+        .subheading {
+            font-weight:bold;
+            padding-right:5px;
+            font-size:1.5em;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Edit Inventory</h1>
+
+    <div>
+        <table style="width:100%;">
+            <tr>
+                <td style="text-align:left;">
+                    <a href="{% if not previd %}/inventory/index?month={{month}}&year={{year}}{% else %}/inventory/item?month={{month}}&year={{year}}&item={{previd}}{% endif %}">
+                        <img src="{% static 'inventory/images/leftarrow.png' %}" alt="{{previd}}"/></a></td>
+                <td style="text-align:center;">
+                    <a href="/inventory/index?month={{month}}&year={{year}}">
+                        <img src="{% static 'inventory/images/list.png' %}" alt="Back To List"/></a></td>
+                <td style="text-align:right;">
+                    <a href="{% if not nextid %}/inventory/index?month={{month}}&year={{year}}{% else %}/inventory/item?month={{month}}&year={{year}}&item={{nextid}}{% endif %}">
+                        <img src="{% static 'inventory/images/rightarrow.png' %}" alt="Next Item"/></a></td>
+            </tr>
+        </table>
+    </div>
+    <div style="border:solid;border-width:2px;box-shadow:initial;padding:5px;overflow:hidden;">
+        {% if item is None %} <h3 style="color:red;text-align:center;">Invalid Item</h3  >
+        {% else %}
+        <h2 style="text-align:center;">{{item.description}}</h2>
+        <table class="item-info">
+            <tr>
+                <td>Location</td>
+                <td>{{item.location}}</td>
+            </tr>
+            <tr>
+                <td>SubLocation</td>
+                <td>{{item.sublocation}}</td>
+            </tr>
+            <tr>
+                <td >UnitSize</td>
+                <td>{{item.unitsize}}</td>
+            </tr>
+            <tr>
+                <td style="font-weight:bold;padding-right:5px">Qauntity</td>
+                <td><input class="autoupdate" id="{{item.itemid}}" type="text"
+                                   onClick="this.setSelectionRange(0, this.value.length)"
+                                   style="float:right" data-itemid="{{item.itemid}}"
+                                   data-attribute="quantity" data-description="{{item.description}}"
+                           value="{{item.quantity}}"/>  </td>
+            </tr>
+        </table>
+        <div class="inlineclear column">
+            <div style="padding:5px">
+                <div>
+                    <span class="subheading"> Quick Add: <span id="autoCalcTotal">0</span></span>
+                    <button onclick="autoCalcToTotal()">Commit Value</button>
+                </div>
+                <div id="calcholder" style="padding:5px;"></div>
+            </div>
+            <div style="clear:both;padding:5px">
+                <span class="subheading"">Notes:</span><br />
+                <textarea class="autoupdate" id="notes" rows="10" cols="100" value="{{item.usernotes}}"
+                          data-itemid="{{item.itemid}}"
+                          data-attribute="usernotes" data-description="{{item.description}}"></textarea>
+            </div>
+        </div>
+        <div class="inlineclear column">
+            <span class="subheading">Description</span>
+            <p style="font-size:1.5em;">{{item.notes}}</p>
+            {% if item.image %}
+                <img src="{{  item.image.url }}" alt="No Image" height="400" width = "400"/>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+    
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'core/scripts/security.js' %}"></script>
+    <script src="{% static 'inventory/scripts/inventory.js' %}"></script>
+    <script src="{% static 'inventory/scripts/autocalc.js' %}"></script>
+    <script src="{% static 'inventory/scripts/autoupdate.js' %}"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/3.13.3/math.min.js"></script>
+
+
+
+    <script>
+        var month = {{month}};
+        var year = {{year}};
+        var itemid = `{{item.itemid}}`;
+
+    {% if item %}
+        $(document).ready(function(){
+            autoAddPopulate(`{{item.sums}}`);
+            $("#notes").val(`{{item.usernotes}}`);
+        }
+        );
+    {% endif %}
+
+    </script>
+{% endblock %}

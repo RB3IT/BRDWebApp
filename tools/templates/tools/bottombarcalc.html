@@ -1,0 +1,235 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        #output.error {
+            color:red;
+            font-weight:bold;
+        }
+        #background {
+            border: solid 1px;
+            display: none;
+        }
+            #background.on {
+                display:block;
+            }
+        table {
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+<select id="bbartype">
+    <option value="double" selected>Regular Bottombar</option>
+    <option value="single">Bandspring Bottombar</option>
+    <option value="bring">Barrel Rings</option>
+</select>
+<label>Length <input type="number" id="size"/> Inches</label>
+<button type="button" onclick="calculateBottomBar();">Calculate</button>
+<div id="output" style="padding:1em;"></div>
+<button type="button" onclick="toggleStats();">Show Stats</button>
+<div id="background" class="off" style="padding:1em;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $("#size").keypress(function (e) {
+        if (e.which == 13) {
+            $(e.target).blur();
+            calculateBottomBar();
+        };
+    });
+    var ROLLINGHOLELENGTH = 24;
+    var BANDHOLELENGTH = 19;
+    var EDGEDISTANCE = 6;
+
+    // [Charge, Drive]
+    var PIPEEDGE = [7.875, 5.875];
+
+    // Currently not Used //var RINGLENGTH = 19;
+
+    // In Inches
+    var PIPELOOKUP = {
+        96: 3,
+        120: 4,
+        144: 5,
+        204: null
+    };
+
+
+    function round2Sixteenth(number) {
+        /* A modified function for rounding a number to the nearest 1/16 */
+        let recipricol = 16;
+        if (Math.ceil(number * recipricol) - number * recipricol <= .5) {
+            return Math.ceil(number * recipricol) / recipricol;
+        }
+        return Math.floor(number * recipricol) / recipricol;
+    };
+
+    function formatFraction(number) {
+        /* Taken and modified from https://stackoverflow.com/a/23575406/3225832*/
+
+        var gcd = function(a, b) {
+          if (b < 0.0000001) return a;                // Since there is a limited precision we need to limit the value.
+
+          return gcd(b, Math.floor(a % b));           // Discard any fractions due to limitations in precision.
+        };
+
+        let whole = Math.floor(number);
+        number = number - whole;
+
+        let len = number.toString().length - 2;
+
+        let denominator = Math.pow(10, len);
+        let numerator = number * denominator;
+
+        let divisor = gcd(numerator, denominator);    // Should be 5
+
+        numerator /= divisor;                         // Should be 687
+        denominator /= divisor;                       // Should be 2000
+        return `${whole} ${numerator}/${denominator}`;
+    };
+
+    function toggleStats() {
+        /* Toggles the Stats (#background) div visibility */
+        $("#background").hasClass("on") ? $("#background").removeClass("on") : $("#background").addClass("on");
+    };
+
+    function calculateBottomBar() {
+        /* Check the mode/input and offload to getMode */
+        let mode = $("#bbartype").val();
+        let input = $("#size").val();
+        let output = $("#output");
+        output.empty().removeClass("error");
+        try {
+            let out = getMode(mode, input);
+            if (mode == "bring") {
+                output.append(`<span style="font-weight:bold">Drive</span>`);
+            };
+            outputResult(out);
+            if (mode == "bring") {
+                output.append(`<span style="font-weight:bold">Charge</span>`);
+            };
+        } catch (error) {
+            console.log(error);
+            output.append("Invalid Mode").addClass("error");
+        };
+
+    };
+
+    function getMode(mode,input) {
+        /* Parses mode and redirects to the correct function */
+        if (mode == "double") {
+            return calculateDouble(input);
+        }
+        else if (mode == "single") {
+            return calculateSingle(input);
+        }
+        else if (mode == "bring") {
+            return calculateBarrelRings(input);
+        }
+        else {
+            throw new Error("Invalid Mode");
+        };
+    };
+
+    function calculateDouble(input) {
+        /* Calculates holes per a Rolling Steel/Double Angle Bottombar */
+        let inside = input - 12;
+        // Number of holes to drill
+        let holes = Math.floor(inside / ROLLINGHOLELENGTH);
+        let fraction = (inside / ROLLINGHOLELENGTH) - holes;
+        // If we're close to .5 inch, prefer to make distance smaller
+        if (fraction >= .5) { holes++; };
+        // Distance between holes
+        let length = inside / holes;
+        
+        let [output, start] = stepOutput(EDGEDISTANCE, input - EDGEDISTANCE, length);
+        return output;
+    };
+
+    function calculateSingle(input) {
+        /* Calculates holes per a Bandspring/Single Angle Bottombar */
+        let midpoint = input / 2;
+        let gap = midpoint - EDGEDISTANCE;
+        // Get even spacing of holes between edgehole and midpointhole
+        let holes = Math.floor(gap / BANDHOLELENGTH);
+        // Distance between holes
+        let length = gap / holes;
+                ;
+        let [output,start] = stepOutput(EDGEDISTANCE, midpoint, length);
+
+        //start += length;
+        let output2;
+        [output2, start] = stepOutput(start, input - EDGEDISTANCE, length);
+        return output.concat(output2)
+    };
+
+    function calculateBarrelRings(input) {
+        /* Calculates Barrel Ring Placement */
+        let [charge, drive] = PIPEEDGE;
+        let edges = charge + drive;
+        let inside = input - edges;
+
+        let doorcategory = Math.max.apply(Math, Object.keys(PIPELOOKUP).filter(key => parseInt(key) <= input));
+
+        let rings = PIPELOOKUP[doorcategory];
+        if (!rings) {
+            throw new Error("Invalid Pipe Size");
+        };
+
+        let length = inside / rings;
+
+        let [output, start] = stepOutput(drive, input - edges, length);
+        return output;
+    };
+
+    function stepOutput(start, end, step) {
+        /* This function used to output directly to the doc, but is largely vestigial at this point */
+        let output = [];
+        for (start; start <= end; start += step) {
+            output.push(start);
+        };
+        return [output,start];
+    };
+
+    function outputResult(out) {
+        /* Formats output and applies it to the document */
+        let output = $("#output")
+        let stats = $("#background");
+        for (let point of out) {
+                // Round output value to 16th
+                let p = round2Sixteenth(point)
+                if (p - Math.floor(p) > 0) {
+                    p = formatFraction(p);
+                };
+                // Output hole
+                output.append(`<p>${p} (${point.toFixed(4)})</p>`);
+        };
+        stats.empty();
+        let table = $("<table><thead><tr><td>Point</td><td>Difference</td></tr></thead></table>");
+        let tbody = $("<tbody></tbody>").appendTo(table);
+        let last = null;
+        for (let point of out) {
+            let difference = ""
+            if (last) {
+                difference = (point - last).toFixed(4);
+            };
+            tbody.append(`
+<tr>
+    <td>${point.toFixed(4)}</td>
+    <td>${difference}</td>
+</tr>`);
+            last = point;
+        };
+        stats.append(table);
+    };
+</script>
+{% endblock %}

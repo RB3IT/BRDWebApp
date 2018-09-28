@@ -1,0 +1,114 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        label {
+            display:block;
+        }
+        table.output>thead td{
+            font-weight:bold;
+        }
+        table.output > tbody td {
+            text-align:center;
+            background-color:lightgoldenrodyellow;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <h2>Total Slat length</h2>
+    <div class="floatleft">
+        <div>
+            <label>
+                Slat Length
+                <input id="slatlength" type="number"/>
+            </label>
+            <label>
+                Number of Slats
+                <input id="slatnumber" type="number"/>
+            </label>
+            <button type="button" onclick="calculateSlatLength();">Calculate</button>
+        </div>
+        <table class="output">
+            <thead>
+                <tr><td>Total Length</td></tr>
+            </thead>
+            <tbody>
+                <tr><td id="slatoutput">0</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div>
+    <h2>Length of Coil</h2>
+    <div class="floatleft">
+        <label>
+            Current Width
+            <input id="width" type="number"/>
+            <button type="button" onclick="calculateCoilLength();">Calculate</button>
+        </label>
+        <table class="output">
+            <thead>
+                <tr><td>Length of Coil</td></tr>
+            </thead>
+            <tbody>
+                <tr><td id="coiloutput">0</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // The inner diameter of a coil is about 20"
+    var innerradius = 10;
+    // Increase Radius is the thickness of the metal
+    var increaseradius = 3 / 80;
+    $(document).ready(function () {
+        // Calculation bindings
+        $("#slatlength,#slatnumber").each(function () { $(this).blur(calculateSlatLength).keypress(checkEnter); });
+        $("#width").blur(calculateCoilLength).keypress(checkEnter);
+    })
+
+    function checkEnter(e) {
+        // Shortcut function for firing calculation on the Enter/Return keypress
+        if (e.which == 13) {
+            e.target.blur();
+        };
+    };
+
+    function calculateSlatLength() {
+        /* Function to calculate the total length of all slats being cut */
+        let output = $("#slatoutput");
+        // Clear output
+        output.empty();
+        let slatlength = $("#slatlength").val();
+        let slatnumber = $("#slatnumber").val();
+        // If slat length or quantity is missing, can't do math, so just set to 0 and bail
+        if (!slatlength || !slatnumber) {
+            output.html(0);
+            return;
+        };
+        // Calculate total cut length and output to table
+        let result = slatlength * slatnumber;
+        output.html(result);
+    };
+
+    function calculateCoilLength() {
+        /* Function to calculate the total length of a coil, based on the thickness of the coil (radius width; not the entire coil width) */
+        let output = $("#coiloutput");
+        output.empty();
+        let input = $("#width").val();
+        // Turns (layers) is equal to thickness divided by thickness of each layer
+        let turns = input / increaseradius;
+        // Equation for the length of the coil
+        // Roughly: Length of the smallest Circumference + the total difference of the length of all layers after the first
+        let length = 2 * Math.PI * innerradius * turns + Math.PI * increaseradius * turns * (turns - 1);
+        // Output to table
+        output.html(length);
+    };
+</script>
+{% endblock %}

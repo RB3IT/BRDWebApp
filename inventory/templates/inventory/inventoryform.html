@@ -1,0 +1,140 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'inventory/content/filtertable.css' %}" />
+    <!-- Align Table-->
+    <style>
+        th:nth-child(2)>input, td:nth-child(2) {
+            text-align:center;
+        }
+        th:nth-child(3)>input, td:nth-child(3) {
+            text-align:center;
+        }
+        th:nth-child(4)>input,td:nth-child(4)>input{
+            text-align:right;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+
+        <!--<input type="submit" value="Export" onclick="getFile()" />-->
+
+        <table style="width:100%;table-layout:fixed;">
+            <tr>
+                <td style="text-align:left">
+                    {% if prevmonth %}
+                    <a href="/inventory/index?month={{prevmonth.month}}&year={{prevmonth.year}}">
+                        <img src="{% static 'inventory/images/leftarrow.png' %}" alt="Previous Month"/></a>
+                    {% endif %}
+                </td>
+                <td style="text-align:center">
+                    <form action ="">
+                        {% if not month %}
+                        <span style="color:red;font-style:italic">Invalid Selection</span>
+                        {% endif %}
+                        <select name="month">
+                            <option value="1" {% if month == 1 %} selected {% endif %}>January</option>
+                            <option value="2" {% if month == 2 %} selected {% endif %}>February</option>
+                            <option value="3" {% if month == 3 %} selected {% endif %}>March</option>
+                            <option value="4" {% if month == 4 %} selected {% endif %}>April</option>
+                            <option value="5" {% if month == 5 %} selected {% endif %}>May</option>
+                            <option value="6" {% if month == 6 %} selected {% endif %}>June</option>
+                            <option value="7" {% if month == 7 %} selected {% endif %}>July</option>
+                            <option value="8" {% if month == 8 %} selected {% endif %}>August</option>
+                            <option value="9" {% if month == 9 %} selected {% endif %}>September</option>
+                            <option value="10" {% if month == 10 %} selected {% endif %}>October</option>
+                            <option value="11" {% if month == 11 %} selected {% endif %}>November</option>
+                            <option value="12" {% if month == 12 %} selected {% endif %}>December</option>
+                        </select>
+                        <input name ="year" type="number" min="1900" max="2100" value="{{year}}" />
+                        <input type="submit" value="Inventory" />
+                    </form>
+                </td>
+                <td style="text-align:right">
+                    {% if nextmonth %}
+                    <a href="/inventory/index?month={{nextmonth.month}}&year={{nextmonth.year}}">
+                        <img src="{% static 'inventory/images/rightarrow.png' %}" alt="Next Month"/></a>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+        <div style="width:100%;">
+        <div style="display:table;margin:0 auto;">
+            
+            <form action="/inventory/export" method="post">
+                <input type="hidden" value="True" name="ytd" />
+                <input type="hidden" value="{{year}}-{{month}}-1" name="end"/>
+                <input type="submit" value="Export YTD"/>
+                {% csrf_token %}
+            </form>
+                </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="panel panel-primary filterable">
+            <div class="panel-heading">
+                <h2 class="panel-title" style="text-align:center;font-weight:bold">Inventory</h2>
+                <div class="pull-right">
+                    <button class="btn btn-default btn-xs btn-filter"><span class="glyphicon glyphicon-filter"></span> Filter</button>
+                </div>
+            </div>
+            <table class="table table-striped">
+                <thead class="thead-inverse">
+                    <tr class="filters">
+                        <th><input type="text" class="form-control" placeholder="Name" style="font-weight:bold" disabled/></th>
+                        <th><input type="text" class="form-control" placeholder="Location" style="font-weight:bold" disabled/></th>
+                        <th><input type="text" class="form-control" placeholder="Unit Size" style="font-weight:bold" disabled/></th>
+                        <th><input type="text" class="form-control" placeholder="Quantity" style="font-weight:bold;text-align" disabled/></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if inventorylist %}
+                    {% for item in inventorylist %}
+                    <tr>
+                        <td><a href="/inventory/item?year={{year}}&month={{month}}&item={{item.itemid}}">{{item.description}}</a></td>
+                        <td>{{item.location}}</td>
+                        <td>{{item.unitsize}}</td>
+                        <td>
+                            <input class="autoupdate" type="text"
+                                   onClick="this.setSelectionRange(0, this.value.length)"
+                                   style="float:right"
+                                   data-itemid="{{item.itemid}}" data-description="{{item.description}}"
+                                   value="{{item.quantity}}" data-attribute="quantity"/>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align:center;font-weight:bold;color:red">No Records</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'core/scripts/security.js' %}"></script>
+    <script src="{% static 'inventory/scripts/inventory.js' %}"></script>
+    <script src="{% static 'inventory/scripts/filtertable.js' %}"></script>
+    <script src="{% static 'inventory/scripts/autoupdate.js' %}"></script>
+
+    <script>
+        var month = {{month}};
+        var year = {{year}};
+
+    function getFile(){
+        let start = `${year}-${month}-1`;
+        let end = `${year}-${month}-1`;
+        $.post('/inventory/export',
+        {start:start,end:end},
+        function(data){});
+    };
+    </script>
+{% endblock %}
