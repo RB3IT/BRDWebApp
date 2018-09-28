@@ -31,11 +31,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="coils\admin.py" />
-    <Compile Include="coils\models.py" />
-    <Compile Include="coils\urls.py" />
-    <Compile Include="coils\views.py" />
-    <Compile Include="coils\__init__.py" />
     <Compile Include="core\admin.py" />
     <Compile Include="core\apps.py" />
     <Compile Include="core\migrations\__init__.py" />
@@ -44,18 +39,6 @@
     <Compile Include="core\urls.py" />
     <Compile Include="core\views.py" />
     <Compile Include="core\__init__.py" />
-    <Compile Include="doors\admin.py" />
-    <Compile Include="doors\apps.py" />
-    <Compile Include="doors\forms.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="doors\migrations\__init__.py" />
-    <Compile Include="doors\models.py" />
-    <Compile Include="doors\ordervalidation.py" />
-    <Compile Include="doors\tests.py" />
-    <Compile Include="doors\urls.py" />
-    <Compile Include="doors\views.py" />
-    <Compile Include="doors\__init__.py" />
     <Compile Include="inventory\admin.py">
       <SubType>Code</SubType>
     </Compile>
@@ -76,26 +59,10 @@
     <Compile Include="inventory\views.py" />
     <Compile Include="inventory\__init__.py" />
     <Compile Include="BRDWebApp\__init__.py" />
-    <Compile Include="BRDWebApp\settings.py" />
     <Compile Include="BRDWebApp\urls.py" />
     <Compile Include="BRDWebApp\wsgi.py" />
-    <Compile Include="tools\admin.py" />
-    <Compile Include="tools\apps.py" />
-    <Compile Include="tools\migrations\__init__.py" />
-    <Compile Include="tools\models.py" />
-    <Compile Include="tools\tests.py" />
-    <Compile Include="tools\urls.py" />
-    <Compile Include="tools\views.py" />
-    <Compile Include="tools\__init__.py" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="coils\static\" />
-    <Folder Include="coils\static\inventory\" />
-    <Folder Include="coils\static\inventory\content\" />
-    <Folder Include="coils\static\inventory\fonts\" />
-    <Folder Include="coils\static\inventory\scripts\" />
-    <Folder Include="coils\templates\" />
-    <Folder Include="coils\templates\inventory\" />
     <Folder Include="core\" />
     <Folder Include="core\migrations\" />
     <Folder Include="core\static\" />
@@ -106,14 +73,6 @@
     <Folder Include="core\templates\" />
     <Folder Include="core\templates\core\" />
     <Folder Include="core\templates\widgets\" />
-    <Folder Include="doors\" />
-    <Folder Include="doors\migrations\" />
-    <Folder Include="doors\static\" />
-    <Folder Include="doors\static\doors\" />
-    <Folder Include="doors\static\doors\content\" />
-    <Folder Include="doors\static\doors\scripts\" />
-    <Folder Include="doors\templates\" />
-    <Folder Include="doors\templates\doors\" />
     <Folder Include="inventory\" />
     <Folder Include="BRDWebApp\" />
     <Folder Include="inventory\" />
@@ -125,46 +84,8 @@
     <Folder Include="inventory\static\inventory\scripts\" />
     <Folder Include="inventory\templates\" />
     <Folder Include="inventory\templates\inventory\" />
-    <Folder Include="coils\" />
-    <Folder Include="tools\" />
-    <Folder Include="tools\static\tools\scripts\" />
-    <Folder Include="tools\migrations\" />
-    <Folder Include="tools\static\tools\content\" />
-    <Folder Include="tools\static\" />
-    <Folder Include="tools\static\tools\" />
-    <Folder Include="tools\templates\" />
-    <Folder Include="tools\templates\tools\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="BRDWebApp\supplies.json" />
-    <Content Include="coils\static\inventory\content\bootstrap.css" />
-    <Content Include="coils\static\inventory\content\filtertable.css" />
-    <Content Include="coils\static\inventory\fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="coils\static\inventory\fonts\glyphicons-halflings-regular.svg" />
-    <Content Include="coils\static\inventory\fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="coils\static\inventory\fonts\glyphicons-halflings-regular.woff" />
-    <None Include="coils\static\inventory\scripts\_references.js" />
-    <Content Include="coils\static\inventory\scripts\autocalc.js" />
-    <Content Include="coils\static\inventory\scripts\bootstrap.min.js" />
-    <Content Include="coils\static\inventory\scripts\coiloutput.js" />
-    <Content Include="coils\static\inventory\scripts\filtertable.js" />
-    <Content Include="coils\static\inventory\scripts\inventory.js" />
-    <None Include="coils\static\inventory\scripts\jquery.validate-vsdoc.js" />
-    <None Include="coils\static\inventory\scripts\jquery-1.10.2.intellisense.js" />
-    <Content Include="coils\static\inventory\scripts\jquery-1.10.2.js" />
-    <Content Include="coils\static\inventory\scripts\jquery-1.10.2.min.map" />
-    <Content Include="coils\static\inventory\scripts\jquery.validate.js" />
-    <Content Include="coils\static\inventory\scripts\jquery.validate.min.js" />
-    <Content Include="coils\static\inventory\scripts\jquery.validate.unobtrusive.js" />
-    <Content Include="coils\static\inventory\scripts\jquery.validate.unobtrusive.min.js" />
-    <Content Include="coils\static\inventory\scripts\respond.min.js" />
-    <Content Include="coils\templates\inventory\coilregistry.html" />
-    <Content Include="coils\templates\inventory\inventoryform.html" />
-    <Content Include="coils\templates\inventory\inventorymonthselect.html" />
-    <Content Include="coils\templates\inventory\itemform.html" />
-    <Content Include="coils\templates\inventory\outputcoils.html" />
-    <Content Include="coils\templates\inventory\scancoil.html" />
-    <Content Include="coils\templates\inventory\viewcoil.html" />
     <Content Include="core\static\core\content\loader test.html" />
     <Content Include="core\static\core\content\loader.css" />
     <Content Include="core\static\core\content\toggle.css" />
@@ -181,17 +102,6 @@
     <Content Include="core\static\core\scripts\toggle.js" />
     <Content Include="core\templates\core\home.html" />
     <Content Include="core\templates\widgets\datalist.html" />
-    <Content Include="doors\static\doors\content\doors.css" />
-    <Content Include="doors\static\doors\scripts\job.js" />
-    <Content Include="doors\static\doors\scripts\order.js" />
-    <Content Include="doors\static\doors\scripts\order_overview.js" />
-    <Content Include="doors\static\doors\scripts\springs.js" />
-    <Content Include="doors\static\doors\scripts\springsgui.js" />
-    <Content Include="doors\templates\doors\index.html" />
-    <Content Include="doors\templates\doors\order.html" />
-    <Content Include="doors\templates\doors\order_overview.html" />
-    <Content Include="doors\templates\doors\order_result.html" />
-    <Content Include="doors\templates\doors\springsetter.html" />
     <Content Include="inventory\static\inventory\content\bootstrap.css" />
     <Content Include="core\static\core\content\bootstrap.min.css" />
     <Content Include="inventory\static\inventory\content\filtertable.css">
@@ -206,11 +116,6 @@
     <Content Include="core\static\core\scripts\bootstrap.js" />
     <Content Include="inventory\static\inventory\scripts\bootstrap.min.js" />
     <Content Include="inventory\static\inventory\scripts\coiloutput.js" />
-    <Content Include="tools\templates\tools\billsplitter.html" />
-    <Content Include="tools\templates\tools\bottombarcalc.html" />
-    <Content Include="tools\templates\tools\index.html" />
-    <Content Include="tools\templates\tools\officesupplies.html" />
-    <Content Include="tools\templates\tools\lengthestimator.html" />
     <None Include="inventory\static\inventory\scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="inventory\static\inventory\scripts\filtertable.js" />
     <Content Include="inventory\static\inventory\scripts\inventory.js" />
