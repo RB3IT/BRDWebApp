@@ -37,7 +37,7 @@ class SteelCoil(models.Model):
         """ Generates the Coil's qr code """
         return pyqrcode.create(self.pk)
 
-    def qroutput(self, size = ):
+    def qroutput(self, size = 10):
         """ Creates the QR Printable Image """
         qr = self.generate_qr()
         f = io.BytesIO()

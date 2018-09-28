@@ -21,9 +21,6 @@ from django.contrib.auth.decorators import login_required
 ## This Module
 from . import models
 
-## Sister Module
-from BRDSolution.inventory.constants import DATEFORMAT
-
 ## Third Party
 from PIL import Image ## [pillow] Used for QR Printing
 
