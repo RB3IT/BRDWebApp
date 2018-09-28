@@ -76,9 +76,9 @@
     <Compile Include="inventory\views.py" />
     <Compile Include="inventory\__init__.py" />
     <Compile Include="BRDWebApp\__init__.py" />
-    <Compile Include="BRDWebApp\settings.py" />
     <Compile Include="BRDWebApp\urls.py" />
     <Compile Include="BRDWebApp\wsgi.py" />
+    <Compile Include="manage.py" />
     <Compile Include="tools\admin.py" />
     <Compile Include="tools\apps.py" />
     <Compile Include="tools\migrations\__init__.py" />
@@ -136,6 +136,8 @@
     <Folder Include="tools\templates\tools\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitattributes" />
+    <Content Include=".gitignore" />
     <Content Include="BRDWebApp\supplies.json" />
     <Content Include="coils\static\inventory\content\bootstrap.css" />
     <Content Include="coils\static\inventory\content\filtertable.css" />
@@ -192,6 +194,7 @@
     <Content Include="doors\templates\doors\order_overview.html" />
     <Content Include="doors\templates\doors\order_result.html" />
     <Content Include="doors\templates\doors\springsetter.html" />
+    <Content Include="getip.cmd" />
     <Content Include="inventory\static\inventory\content\bootstrap.css" />
     <Content Include="core\static\core\content\bootstrap.min.css" />
     <Content Include="inventory\static\inventory\content\filtertable.css">
@@ -206,6 +209,7 @@
     <Content Include="core\static\core\scripts\bootstrap.js" />
     <Content Include="inventory\static\inventory\scripts\bootstrap.min.js" />
     <Content Include="inventory\static\inventory\scripts\coiloutput.js" />
+    <Content Include="run.bat" />
     <Content Include="tools\templates\tools\billsplitter.html" />
     <Content Include="tools\templates\tools\bottombarcalc.html" />
     <Content Include="tools\templates\tools\index.html" />

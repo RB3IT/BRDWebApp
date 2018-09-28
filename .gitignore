@@ -6,11 +6,12 @@
 *.user
 *.userosscache
 *.sln.docstates
+/*
+!/readme.md
+**/settings.py
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-/*
-!/readme.md
 
 # Build results
 [Dd]ebug/
