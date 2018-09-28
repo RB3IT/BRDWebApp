@@ -12,7 +12,8 @@
     <ProjectGuid>240e4c1a-a216-46ac-8e3b-47fecd8208bb</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <ProjectTypeGuids>{5F0BE9CA-D677-4A4D-8806-6076C0FAAD37};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
-    <StartupFile>manage.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -74,7 +75,6 @@
     <Compile Include="inventory\urls.py" />
     <Compile Include="inventory\views.py" />
     <Compile Include="inventory\__init__.py" />
-    <Compile Include="manage.py" />
     <Compile Include="BRDWebApp\__init__.py" />
     <Compile Include="BRDWebApp\settings.py" />
     <Compile Include="BRDWebApp\urls.py" />
@@ -206,10 +206,6 @@
     <Content Include="core\static\core\scripts\bootstrap.js" />
     <Content Include="inventory\static\inventory\scripts\bootstrap.min.js" />
     <Content Include="inventory\static\inventory\scripts\coiloutput.js" />
-    <Content Include="inventory\templates\inventory\coilregistry.html" />
-    <Content Include="inventory\templates\inventory\scancoil.html" />
-    <Content Include="inventory\templates\inventory\outputcoils.html" />
-    <Content Include="inventory\templates\inventory\viewcoil.html" />
     <Content Include="tools\templates\tools\billsplitter.html" />
     <Content Include="tools\templates\tools\bottombarcalc.html" />
     <Content Include="tools\templates\tools\index.html" />
@@ -235,12 +231,6 @@
     <Content Include="core\templates\core\layout.html" />
     <Content Include="core\templates\core\login.html" />
     <Content Include="core\templates\core\loginpartial.html" />
-    <Content Include="requirements.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="readme.html">
-      <SubType>WebBrowser</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.6-32" />
