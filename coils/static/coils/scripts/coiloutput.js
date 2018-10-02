@@ -2,7 +2,7 @@
 function loadCoils() {
     /* Calls API to load the coils into the outputcoils page */
     // TODO: Handle Fail
-    $.get("/inventory/coils/api/getcoillist", {page:page, pagestart: pagestart}, setCoils)//.fail(badSetTurns);
+    $.get("api/getcoillist", {page:page, pagestart: pagestart}, setCoils)//.fail(badSetTurns);
 };
 
 function setCoils(data) {
@@ -11,7 +11,7 @@ function setCoils(data) {
     if (data.result != "success") { return badSetCoils(); };
     for (let coil of data.coils) {
         // Output coil to table
-        $(`<tr class="coil"><td><input type='checkbox' value='${coil.pk}'/></td><td>${coil.pk}</td><td>${coil.weight}</td><td>${coil.stage}</td><td>${coil.date}</td></tr>`).appendTo(table);
+        $(`<tr class="coil"><td><input type='checkbox' value='${coil.pk}'/></td><td><a href="${coil.pk}">${coil.pk}</a></td><td>${coil.size}</td><td>${coil.weight}</td><td>${coil.stage}</td><td>${coil.date}</td></tr>`).appendTo(table);
     };
 };
 
@@ -31,7 +31,7 @@ function outputCoils() {
     }
     // TODO: Handle Fail
     showLoading();
-    $.get("/inventory/api/printcoils", { coils : JSON.stringify(coils) }, printCoils)//.fail(badSetTurns);
+    $.get("api/printcoils", { coils : JSON.stringify(coils) }, printCoils)//.fail(badSetTurns);
 };
 
 function printCoils(data) {

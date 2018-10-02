@@ -27,22 +27,27 @@ import pyqrcode
 
 class SteelCoil(models.Model):
     """ Registers steel coils (with weight and width), generating an ID number, and tracks 3 timestamps: recieving, opened, and finished """
+    size = models.FloatField(verbose_name="Size of Coil", null = False, blank = False)
     weight = models.FloatField(verbose_name="Weight of Coil")
     width = models.FloatField(verbose_name="Width of Coil")
-    recieved = models.DateTimeField(verbose_name = "Recieved Date", auto_now = True)
+    recieved = models.DateTimeField(verbose_name = "Recieved Date", auto_now_add = True)
     opened = models.DateTimeField(verbose_name = "Opened Date", null = True)
     finished = models.DateTimeField(verbose_name = "Finished Date", null = True)
+    notes = models.TextField()
 
     def generate_qr(self):
         """ Generates the Coil's qr code """
         return pyqrcode.create(self.pk)
 
-    def qroutput(self, size = ):
-        """ Creates the QR Printable Image """
+    def qroutput(self, scale = 10, quiet_zone = 4):
+        """ Creates the QR Printable Image
+        
+        quiet_zone's default is currently 4 at the module level
+        """
         qr = self.generate_qr()
         f = io.BytesIO()
         ## Scale 31 is 899 px
-        qr.png(f,scale = 31)
+        qr.png(f,scale = scale, quiet_zone = quiet_zone)
         img = Image.open(f)
         ctx = ImageDraw.Draw(img)
         x,y = img.size
@@ -67,13 +72,11 @@ class SteelCoil(models.Model):
     def _thresholdimage(image):
         ## Try basic thresholding
         im = SteelCoil._clean_qr(image)
-        im.show(0)
         result = pyzbar.decode(im)
         if result: return result
         for mode in range(1,3):
             for block_size in range(11,402,50):
                 im = SteelCoil._clean_qr(image, mode = mode, block_size = block_size)
-                im.show(0)
                 result = pyzbar.decode(im)
                 if result: return result
 
@@ -92,7 +95,7 @@ class SteelCoilForm(forms.ModelForm):
     """ SteelCoilEntry Form """
     class Meta:
         model = SteelCoil
-        fields = ["weight","width"]
+        fields = ["size","weight","width"]
 
     def clean(self):
         cleaned_data = super().clean()
