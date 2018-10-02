@@ -22,6 +22,5 @@ urlpatterns = [
     url(r'^export$',views.exportinventories),
 
     ## Default Landing Page
-    url(r"^coils",include("coils.urls")),
     url(r"^",views.MonthSelect.as_view(), name='inventoryhome'),
 ]
