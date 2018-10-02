@@ -5,9 +5,18 @@
 {% endblock %}
 
 {% block content %}
-<form action="{% url 'coilregistry'  %}" method="post">
+<form action="{% url 'coilregistry'  %}" id="coilregister" method="post">
     {% csrf_token %}
     <table>
+        <tr>
+            <td>Size</td>
+            <td>
+                <select name="size">
+                    <option value="5.28">5.28</option>
+                    <option value="5.34">5.34</option>
+                </select>
+            </td>
+        </tr>
         <tr>
             <td>Coils</td>
             <td><input type="number" name="coilcount"/></td>
@@ -18,7 +27,11 @@
         </tr>
         <tr>
             <td>Width</td>
-            <td><input type="number" name="width"/></td>
+            <td><input type="number" name="width" step="0.125"/></td>
+        </tr>
+        <tr>
+            <td>Notes</td>
+            <td><textarea name="notes"></textarea></td>
         </tr>
     </table>
     <input type="submit" value="Submit">

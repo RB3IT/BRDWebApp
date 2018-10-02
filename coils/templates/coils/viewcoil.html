@@ -27,6 +27,10 @@
             <caption>Coil {{coil.pk}}</caption>
             <tbody>
                 <tr>
+                    <td>Size</td>
+                    <td>{{coil.size}}</td>
+                </tr>
+                <tr>
                     <td>Weight</td>
                     <td>{{coil.weight}}</td>
                 </tr>
@@ -40,11 +44,17 @@
                 </tr>
                 <tr>
                     <td>Date Opened</td>
-                    <td>{{coil.opened}}</td>
+                    <td><span id="openspan">{{coil.opened}}</span></td>
+                    <td><button type="button" id="openbutton" onclick='setCoil("open")'{% if coil.opened %} disabled{% endif %}>Open</button></td>
                 </tr>
                 <tr>
                     <td>Date Finished</td>
-                    <td>{{coil.finished}}</td>
+                    <td><span id="finishspan">{{coil.finished}}</span></td>
+                    <td><button type="button" id="finishbutton" onclick='setCoil("finish")'{% if coil.finished %} disabled{% endif %}>Finish</button></td>
+                </tr>
+                <tr>
+                    <td>Notes</td>
+                    <td><textarea readonly>{{coil.notes}}</textarea></td>
                 </tr>
             </tbody>
         </table>
@@ -52,5 +62,21 @@
 {% endblock %}
 
 {% block scripts %}
-
+<script>
+    var pk = {{coil.pk}};
+    function setCoil(state){
+        /* Check in with the API signifying that the coil state */
+        $.post("api/coil", { coil : pk , state : state  }, function(data){ success(data,state); })//.fail(badSetTurns);
+    };
+    function success(data,state){
+        /* Shows that the API has been successful posted to */
+        if (data.result=="success"){
+            showSnackbar({ alerttype: "success", label: "Success", text: `Coil is ${state}ed` });
+            let btn = $(`#${state}button`);
+            let spn = $(`#${state}span`);
+            btn.prop("disabled",true);
+            spn.text(data.date);
+        };
+    };
+</script>
 {% endblock %}

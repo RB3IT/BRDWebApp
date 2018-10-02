@@ -24,8 +24,9 @@
         <table id="coilTable">
             <thead>
                 <tr>
-                    <th></th>
+                    <th><input id="outputSelectall" type="checkbox"/></th>
                     <th>ID</th>
+                    <th>Size</th>
                     <th>Weight</th>
                     <th>Stage</th>
                     <th>Date</th>
@@ -44,6 +45,13 @@
         var page = 0;
         var pagestart = null;
         var loadingFlag = false;
-        $(document).ready(loadCoils);
+        $(document).ready(function () {
+            loadCoils();
+            $("#outputSelectall").change(function () {
+                let w = $("#outputSelectall");
+                let coils = $("#coilTable").find("tr.coil input[type=checkbox]");
+                coils.prop("checked", w[0].checked);
+            });
+        });
     </script>
 {% endblock %}
