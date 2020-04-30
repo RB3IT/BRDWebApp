@@ -5,18 +5,22 @@ Definition of views.
 import calendar
 import datetime
 import json
+import re
+import operator as op
 
 import base64 ## used for displaying QR PDF in webpage
 import io ## Used for QR Printing
+import time ## Used to try to overcome concurrency limitations
 
 ## Third Party: Django
 from django import http as dhttp
+from django.contrib.auth.decorators import login_required
 from django.core import serializers
-from django.views import generic as dviews
-from django.views.decorators import http as decorators
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.contrib.auth.decorators import login_required
+from django.views import generic as dviews
+from django.views.decorators import http as decorators
 
 ## This Module
 from . import excelmethods
@@ -175,19 +179,23 @@ class Item(dviews.TemplateView):
                     inventoryitem.sums = currentinventory.sums
                 ## set item
                 context['item'] = inventoryitem
-                
-                items = methods.getincludeditems(dt)
 
+                ## Stock Widgets
+                widgets = [f"inventory/{widget.widget}.html" for widget in models.StockWidgets.objects.filter(itemid = itemobj.itemid)]
+                context['widgets'] = widgets
+                
+                items = list(methods.getincludeditems(dt).order_by('itemindex'))
+                index = items.index(itemobj)
 
                 ## Get previous itemid for navigation
-                previd = items.filter(itemindex__lt=inventoryitem.itemindex).order_by('-itemindex')
-                if not previd: previd = False
-                else: previd = previd[0].itemid
+                prevind = index - 1
+                if prevind < 0: previd = False
+                else: previd = items[prevind].itemid
 
                 ## Get next itemid for navigation
-                nextid = items.filter(itemindex__gt=inventoryitem.itemindex).order_by('itemindex')
-                if not nextid: nextid = False
-                else: nextid = nextid[0].itemid
+                nextind = index + 1
+                if nextind >= len(items): nextid = False
+                else: nextid = items[nextind].itemid
 
                 ## Set navigation ids
                 context['previd'] = previd
@@ -199,21 +207,42 @@ class Item(dviews.TemplateView):
         ## Return Context data to template renderer
         return context
 
+@decorators.require_GET
+@login_required
+def itemlist_api(request):
+    """ API endpoint for getting a list of Inventory Items. """
+    query = request.GET
+    badkeys = [key for key in query if key not in ['itemid', 'itemindex', 'location', 'sublocation', 'search']]
+    if any(badkeys):
+        return dhttp.HttpResponseBadRequest(f'Invalid query parameters: {", ".join(badkeys)}')
+    output = None
+    if itemid := query.get("itemid"):
+        output = models.Items.objects.filter(itemid = itemid)
+    elif (itemindex := query.get("itemindex")) and (research := re.search("(?P<order>(?:[<>]=?)|=)(?P<index>\d+(?:.\d+)?)",itemindex)):
+        index = float(research.group("index"))
+        lookup = {">":"gt", ">=": "gte", "<": "lt", "<=": "lte", "=": "exact"}
+        output = models.Items.objects.filter(**{f"itemindex__{lookup[research.group('order')]}":index})
+    elif location := query.get("location"):
+        output = models.Items.objects.filter(location = location)
+    elif sublocation := query.get("sublocation"):
+        output = models.Items.objects.filter(sublocation = sublocation)
+    elif search := query.get("search"):
+        output = models.Items.objects.filter(Q(item__icontains=search) | Q(description__icontains=search))
 
+    if not output: output = []
+    def process(obj):
+        obj['fields']['pk'] = obj['pk']
+        return obj['fields']
+    objserial = [process(obj) for obj in serializers.serialize('python',output, many = True)]#[0]['fields']
+    return dhttp.JsonResponse({"result":"success","objects":objserial})
 
-
+@decorators.require_POST
+@login_required
 def item_api(request):
     """ API endpoint for updating Inventory Item Attributes
 
     Currently supports: quantity, sums, usernotes
     """
-    ## Ensure only Post
-    if request.method != "POST":
-        return dhttp.HttpResponseNotAllowed(["POST",])
-    ## Check authentication
-    if not request.user.is_authenticated:
-        return dhttp.HttpResponse("Unauthorized",status=401)
-
     ## Get POST data
     data = request.POST
     ## Required Keys to update inventory are itemid and date
@@ -233,6 +262,8 @@ def item_api(request):
         date = datetime.datetime.strptime(date,DATEFORMAT).date()
     except:
         return dhttp.HttpResponseBadRequest('date')
+
+    date = date.replace(day = 1)
 
     input = dict()
     ## Each supported attribute has a validator which returns a result or False (for invalid submission)
@@ -255,7 +286,20 @@ def item_api(request):
     if not input: return dhttp.JsonResponse({"result":"failure"})
 
     ## Update Inventory Object
-    obj,created=models.Inventory.objects.update_or_create(itemid=item,date=date,defaults=input)
+    attempting = 1
+    while attempting:
+        try:
+            obj,created=models.Inventory.objects.update_or_create(itemid=item,date=date,defaults=input)
+        except Exception as e:
+            if e.args[0] == "database is locked":
+                time.sleep(1)
+                attempting +=1
+                if attempting > 10:
+                    attempting = False
+            else:
+                raise e
+        else:
+            attempting = False
     ## Make sure to save it
     obj.save()
     ## Convert to json so that we can return it with the response
@@ -294,3 +338,36 @@ def item_api_sums(item,date, sums):
 
 class MonthSelect(dviews.TemplateView):
     template_name = "inventory/inventorymonthselect.html"
+
+@login_required
+def inventoryitem_api(request,itemid,date):
+    """ GET or POST API to Retrieve or Create an Inventory item """
+    if request.method not in ["GET","POST"]:
+        raise dhttp.Http404()
+    item = get_object_or_404(models.Items,itemid = itemid)
+    
+    ## Validate date
+    try:
+        date = datetime.datetime.strptime(date,DATEFORMAT).date()
+    except:
+        return dhttp.HttpResponseBadRequest('date')
+
+    if request.method == "GET":
+        inventoryitem = get_object_or_404(models.Inventory,itemid = item, date = date)
+        
+        ## Convert to json so that we can return it with the response
+        objserial = serializers.serialize('python',[inventoryitem,])[0]['fields']
+        objserial['pk'] = inventoryitem.pk
+        ## Respond with success and new, updated object
+        return dhttp.JsonResponse({"result":"success","object":objserial})
+
+    else: ## request.method == "POST"
+        inventoryitem,created = models.Inventory.objects.get_or_create(itemid = item, date = date)
+        if not created:
+            raise dhttp.Http404("Already Exists")
+
+        ## Convert to json so that we can return it with the response
+        objserial = serializers.serialize('python',[inventoryitem,])[0]['fields']
+        objserial['pk'] = inventoryitem.pk
+        ## Respond with success and new, updated object
+        return dhttp.JsonResponse({"result":"success","object":objserial})

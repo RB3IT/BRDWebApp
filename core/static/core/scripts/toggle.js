@@ -112,5 +112,10 @@ function setToggle(element, value) {
     if (value !== true && value !== false) {
         throw new Error(`Invalid truth value for Toggle: ${value}`);
     };
+    let flag = element.find("input").prop("checked") != value;
     element.find("input").prop("checked", value);
+    if (flag) {
+        // Only trigger change on actual state change
+        element.find("input").change();
+    }
 };

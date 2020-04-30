@@ -1,15 +1,21 @@
+""" BRDWebApp/doors/ordervalidation.py
+
+    Contains methods for validating the order and 
+"""
+
 ## Backend
 import django.utils.html as dhtml
 ## This package
 from core import models as coremodels
 from . import models
 ## Sister Module
-from NewDadsDoor import classes
+from NewDadsDoor import classes, methods
 
 ## Builtin
 import datetime
 ## Custom Module
 from alcustoms.methods import nestedempty
+from alcustoms import measurement
 
 JOBVALIDKEYS = ['customer','customer_po','work_order','origin_date','due_date',"description"]
 
@@ -45,7 +51,7 @@ def cleanjobdata(data):
     return data
 
 def jobvalid(data):
-    """ Validates the form data recieved from the New Job Form.
+    """ Validates the form data received from the New Job Form.
     
         If the data is valid, returns an Order Model instance and an empty list of Failures.
         Otherwise, returns None and a list of Failures.
@@ -91,19 +97,22 @@ def validatedoor(_door):
     name,width,height,hand = _door['name'],_door['clearwidth'],_door['clearheight'],_door['hand']
     door = models.Door(name = name, open_width = width, open_height = height, hand = hand)
     output['door'] = door
-    if not door.validate_height(): failures['door'].append("Invalid Clear Height")
-    if not door.validate_width(): failures['door'].append("Invalid Clear Width")
+    if not models.run_validations(door):
+        failures['door'].append("Invalid Door")
+    ## TODO: Figure out how we're going to update specific errors
+    #if not door.validate_height(): failures['door'].append("Invalid Clear Height")
+    #if not door.validate_width(): failures['door'].append("Invalid Clear Width")
     
     ## Validate Each component
     for component in _door['components']:
         comptype = component['type']
-        if comptype == "slats": method,kw = validateslats, {"openwidth":width}
-        elif comptype == "hood": method,kw = validatehood, {"openwidth":width}
-        elif comptype == "bottombar": method,kw = validatebottombar, {"openwidth":width}
-        elif comptype == "tracks": method,kw = validatetracks, {"openheight":height, "hand":hand}
+        if comptype == "slats": method,kw = validateslats, {"openwidth":door.open_width}
+        elif comptype == "hood": method,kw = validatehood, {"openwidth":door.open_width}
+        elif comptype == "bottombar": method,kw = validatebottombar, {"openwidth":door.open_width}
+        elif comptype == "tracks": method,kw = validatetracks, {"openheight":door.open_height, "hand":hand}
         elif comptype == "pipe":
-            component['cycles'] = _door['cycles']
-            method,kw = validatepipe, {"openwidth":width, "hand":hand}
+            ## component['cycles'] = _door['cycles'] ## This is probably safe to delete
+            method,kw = validatepipe, {"openwidth":door.open_width, "hand":hand}
         elif comptype == "accessories": method,kw = validateaccessories, {}
         else:
             failures['components'].append([f"Unknown Component: {comptype}"])
@@ -144,6 +153,7 @@ def validateslats(door,_slats,openwidth = None):
     assemble = _slats['assembled']
     face = _slats['facing']
     endlock_type = _slats['endlocks']
+    if isinstance(width,str): width = measurement.convertmeasurement(width)
     continuous = _slats['continuousendlocks']
     if continuous == "on": continuous = True
     else: continuous = False
@@ -160,7 +170,7 @@ def validateslats(door,_slats,openwidth = None):
     try: endlocks.clean_fields()
     except Exception as e: failures.append(f"Endlock Error:{e}")
     slats = models.Slats(slat_type = slat_type, width = width, quantity = quantity, assemble = assemble, face = face, endlocks = endlocks)
-    if not slats.validate_width() or (openwidth and slats.width is not None and openwidth != slats.width): failures.append("Invalid Slat Width")
+    if not models.run_validations(slats): failures.append("Invalid Slat Width")
     try: slats.clean_fields()
     except Exception as e: failures.append(f"Slat Failures: {e}")
     return {"object":slats,"endlocks":endlocks},failures
@@ -192,12 +202,7 @@ def validatehood(door,_hood,openwidth = None):
     hood = models.Hood(custom = custom, width = width, baffle=baffle, description = description)
     try: hood.clean_fields()
     except Exception as e: failures.append(f"Hood Failures: {e}")
-    ##
-    if (
-        (hood.width is not None and not hood.validate_width())
-        or (openwidth and hood.width and openwidth != hood.width)
-        ):
-        failures.append("Invalid Hood Width")
+
     return hood,failures
 
 def validatebottombar(door,bbar, openwidth = None):
@@ -237,8 +242,6 @@ def validatebottombar(door,bbar, openwidth = None):
                                  bottom_rubber = bottom_rubber, slope_height = slope_height, slope_side = slope_side)
     try: bottombar.clean_fields()
     except Exception as e: failures.append(f"BottomBar Failures: {e}")
-    if not bottombar.validate_width() or (openwidth and bottombar.width is not None and openwidth != bottombar.width):
-        failures.append("Invalid Bottombar Width")
 
     return bottombar,failures
 
@@ -265,6 +268,11 @@ def validatetracks(door,track, openheight = None, hand = None):
         hand = None
     elif autobrackets != "Manual":
         failures.append("Invalid Autobrackets")
+    else:
+        if hand == "Right": hand = "R"
+        elif hand == "Left": hand = "L"
+        else:
+            failures.append("Invalid Bracket Hand")
     if autowall == "Auto":
         wall_angle_height = None
     elif autowall != "Manual":
@@ -290,6 +298,9 @@ def validatetracks(door,track, openheight = None, hand = None):
     if hand and brackets.hand and (brackets.hand != hand):
         failures.append("Invalid Bracket Hand")
 
+    try: tracks.clean_fields()
+    except Exception as e: failures.append(f"Track Failures: {e}")
+
     return {"object":tracks,"brackets":brackets}, failures
 
 def validatepipe(door,_pipe, openwidth=None, hand=None):
@@ -310,6 +321,7 @@ def validatepipe(door,_pipe, openwidth=None, hand=None):
     if autopipe == "Auto":
         pipelength,pipediameter = None,None
         shaftlength, shaftdiameter = None,None
+        cycles = 12500
     elif _pipe['autocalculation'] != "Manual":
         failures.append("Invalid Pipe autocalculation")
 
@@ -325,9 +337,6 @@ def validatepipe(door,_pipe, openwidth=None, hand=None):
         failures.append("Pipe Failure")
     else:
         objects['object'] = pipe
-    
-    if openwidth and autopipe != "Auto" and openwidth != pipe.getclearopen():
-        failures.append("Invalid Pipe Width")
 
     for spring in _pipe['springs']:
         obj,fails = validatespring(spring,pipe)
@@ -433,77 +442,25 @@ def validateaccessories(door,_accessory):
         failures.append(f"Invalid {accessory}: {e}")
     return accessory, failures
 
-
-from django.db.models.fields.related import ManyToManyField
-
-def to_dict(instance):
-    """ Converts an object instance to a dictionary, preserving as many fields as possible
-    
-        Stolen (and modified) from: https://stackoverflow.com/a/29088221/3225832
-    """
-    opts = instance._meta
-    data = {}
-    for f in opts.concrete_fields + opts.many_to_many:
-        if isinstance(f, ManyToManyField):
-            if instance.pk is None:
-                data[f.name] = []
-            else:
-                data[f.name] = list(f.value_from_object(instance).values_list('pk', flat=True))
-        else:
-            data[f.name] = f.value_from_object(instance)
-    data['pk'] = instance.pk
-    return data
-
-def to_doorinstance(doorobj):
-    """ Converts a Django Door Model to a NewDadsDoor Door Instance (as well as all components) """
-
-    if not isinstance(doorobj,models.Door):
-        raise ValueError("to_doorinstance only accepts a Door Model instance")
-
-    doorinstance = classes.Door(**doorobj.to_kwargs())
-
-    hood = doorinstance.sethood()
-
-    tracksobj = models.Tracks.objects.filter(door = doorobj.pk).first()
-
-    if tracksobj:
-        doorinstance.bracketplatesize = tracksobj.brackets.bracket_size
-
-    pipeobj = models.Pipe.objects.filter(door = doorobj.pk).first()
-    if pipeobj:
-        pipe = doorinstance.setpipe(**pipeobj.to_kwargs())
-        assembly = pipe.setassembly()
-
-        springs = models.Spring.objects.filter(pipe = pipeobj.pk)
-        castings = sorted(list(set(spring.casting for spring in springs if spring is not None)))
-        for casting in castings:
-            ## Instead of referencing spring_type to determine order, we're just going to sort the od
-            spngs = sorted(springs.filter(casting = casting), key = lambda spring: spring.outer_diameter, reverse = True)
-            spngs = [classes.Spring(**spring.to_kwargs()) for spring in spngs]
-            socket = classes.Socket(*spngs)
-            assembly.addsocket(socket)
-
-    else:
-        pipe = doorinstance.setpipe()
-        assembly = pipe.setassembly()
-
-    curtain = doorinstance.setcurtain()
-    for slatobj in models.Slats.objects.filter(door = doorobj.pk):
-        slats = classes.SlatSection(curtain = curtain, **slatobj.to_kwargs())
-        curtain.append(slats)
-
-    bbarobj = models.BottomBar.objects.filter(door = doorobj.pk).first()
-    if bbarobj:
-        bbar = classes.BottomBar(**bbarobj.to_kwargs())
-        curtain.append(bbar)
-
-    return doorinstance
-
 def checkdefaults(doorinstance):
     """ Checks for any vital missing values (due to Auto-calculate) and fills them in with default values """
+    if not doorinstance.tracks:
+        methods.create_tracks(doorinstance)
+    if not doorinstance.tracks.outer:
+        doorinstance.tracks.outer = doorinstance.clearopening_height + doorinstance.tracks.stopsize
+    if not doorinstance.tracks.inner:
+        doorinstance.tracks.inner = doorinstance.clearopening_height + doorinstance.tracks.stopsize
+    if not doorinstance.tracks.wall:
+        doorinstance.tracks.wall = doorinstance.wall_length()
     if not doorinstance.pipe.shell:
         doorinstance.pipe.shell = 4
     if doorinstance.curtain.slatsections():
         slatsection = doorinstance.curtain.slatsections()[0]
         ## Our online App does not do custom slat counts currently, so it has to be filled in
+        slatsection.slats = slatsection.getnumberslats(doorinstance.curtain.curtainshort())
+
+def _set_slats(doorinstance):
+    """ Helper function for automatically populating slats (when slats are not explicitly set) """
+    slatsection = doorinstance.curtain.slatsections()[0]
+    if not slatsection.slats:
         slatsection.slats = slatsection.getnumberslats(doorinstance.curtain.curtainshort())

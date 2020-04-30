@@ -19,7 +19,7 @@ def API_company(request):
     """ API hub for companies """
     query = request.GET
     if any(key for key in query if key not in API_COMPANY_VALIDKEYS):
-        print([(key,key not in API_COMPANY_VALIDKEYS) for key in query])
+        #print([(key,key not in API_COMPANY_VALIDKEYS) for key in query])
         return django.http.HttpResponseBadRequest("Invalid query")
     if "search" in query:
         return API_companysearch(request)

@@ -2,9 +2,10 @@
 from django import http as dhttp
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core import serializers
+from django.core import serializers, paginator
 from django.db import transaction
-from django.shortcuts import render
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 import django.utils.html as dhtml
 from django.views import generic as dviews
@@ -12,25 +13,27 @@ from django.views.decorators import http as decorators
 
 ## This Module
 from core import models as coremodels
-from . import models
-from .ordervalidation import validateorder, JOBVALIDKEYS, to_dict, to_doorinstance, checkdefaults
+from . import models, search
+from . import ordervalidation as oval
+from . import io as dio
 
 ## Sister Module
-from NewDadsDoor import classes, methods
+from NewDadsDoor import calculations, classes, methods, sketches, pipecalculations
 
 ## Builtin
 import collections
-import datetime
+import functools
 import itertools
 import json
 import math
 
 ## Custom Module
-from alcustoms.methods import nestedempty, roundtofraction
+from alcustoms.methods import nestedempty
 from alcustoms import measurement
 
 DATEFORMAT = '%d/%m/%Y'
 DATEINPUTFORMAT = '%m-%d-%Y'
+PAGINATION_SIZE = 25
 
 class ValidationException(Exception): pass
 
@@ -39,7 +42,7 @@ def getspringoptions():
     gauges = list(classes.WIREINDEX)
     ods = classes.SPRINGOD
     cycles = list(classes.CYCLES)
-    ## Input's Datalist will not show items that cannot be entered manuall
+    ## Input's Datalist will not show items that cannot be entered manually
     ## This means that the step attribute precision has to be small enough
     ## that any of the values in gauges/ods can be achieved using the step arrows
     ##     len()-1 to remove decimal point
@@ -49,7 +52,14 @@ def getspringoptions():
 
     return dict(wiregauges = gauges, ods = ods, springprecision = springprecision, odprecision = odprecision, cycles = cycles)
 
-# Create your views here.
+def generate_door(clearopening_width,clearopening_height,slattype,castendlocks):
+    if castendlocks == "true":
+        endlocks = "CAST IRON"
+    else:
+        endlocks = "STAMPED STEEL"
+
+    return methods.basic_torsion_door(clearopening_width, clearopening_height, slat = slattype, endlocks = endlocks)
+
 class Home(LoginRequiredMixin,dviews.TemplateView):
     """ Home View """
     template_name = "doors/index.html"
@@ -62,47 +72,62 @@ class Home(LoginRequiredMixin,dviews.TemplateView):
 def order(request):
     """ Landing and validation for Job Creation """
     data = getspringoptions()
-    if request.method == 'POST':
-        form = dict(request.POST)
-        if form.get("orderid"):
-            obj = models.Order.objects.get(pk = form.get("orderid")[0])
-            if not obj: return  render(request,"doors/order.html",data)
-            data = {key:obj.attr(key) for key in JOBVALIDKEYS}
+    #if request.method == 'POST':
+    #    form = dict(request.POST)
+    #    if form.get("orderid"):
+    #        obj = models.Order.objects.get(pk = form.get("orderid")[0])
+    #        if not obj: return  render(request,"doors/order.html",data)
+    #        data = {key:obj.attr(key) for key in JOBVALIDKEYS}
+    #    else:
+    #        data = {key:"" for key in JOBVALIDKEYS}
+    #    for key in JOBVALIDKEYS:
+    #        if form.get(key): data[key] = form[key]
+    #    data = cleanjobdata(data)
+    #else:
+    orderid = request.GET.get("orderid")
+    error = False
+    form = dict()
+    if orderid:
+        try:
+            order = models.Order.objects.filter(pk = int(orderid)).first()
+            assert order
+        except Exception as e:
+            error = "Invalid Order"
         else:
-            data = {key:"" for key in JOBVALIDKEYS}
-        for key in JOBVALIDKEYS:
-            if form.get(key): data[key] = form[key]
-        data = cleanjobdata(data)
-    else:
-        error = False
-        form = dict()
+            form = order.to_form()
+            form['orderid'] = orderid
     data['form'] = form
     data['error'] = error
     return render(request,"doors/order.html",data)
 
 @login_required
 @decorators.require_GET
-def orderinfo(request):
+def API_orderinfo(request):
     """ Shows all components of a given order """
     if request.method == 'GET':
         orderid = request.GET['orderid']
         if not orderid:
-            return order(request)
+            return dhttp.HttpResponseBadRequest("Invalid Order")
+        order = models.Order.objects.filter(pk = orderid).first()
+        if not order: return dhttp.HttpResponseBadRequest("Invalid Order")
         doors = []
-        for door in models.Door.objects.filter(order_id = orderid):
+        for door in models.Door.objects.filter(order = orderid):
+            doorout = dio.to_dict(door)
             components = []
-            for obj in [models.BottomBar,models.CustomAccessory,models.Door,
+            for obj in [models.BottomBar,models.CustomAccessory,
                         models.Facia,models.FeederSlat,models.GearCover,models.Hood,
                         models.MotorCover,models.Pipe,models.Slats,models.Tracks]:
-                components.extend(serializers.serialize("json",obj.objects.filter(order_id = orderid)))
-            door.components = components
-            doors.append(serializers.serialize("json",door))
-        data = {"orderid":orderid,"doors":doors}
-        return render(request,"doors/new_order.html",data)
+                res = [dio.to_dict(res) for res in obj.objects.filter(door = door)]
+                for r in res: r['type'] = obj.__name__
+                components.extend(res)
+            doorout['components'] = components
+            doors.append(doorout)
+        data = {"success":True,"orderid":orderid,"doors":doors}
+        return dhttp.JsonResponse(data)
 
 @login_required
 @decorators.require_GET
-def orderpart(request):
+def API_orderpart(request):
     """ Shows all components of a given order """
     if request.method == 'GET':
         doorid,pk,kind = request.GET.get("doorid"),request.GET.get('id'),request.GET.get("type")
@@ -129,7 +154,7 @@ def orderpart(request):
         if not door or not obj:
             return dhttp.HttpResponseBadRequest("Invalid Query") 
         ## TODO: Validate Door > Obj
-        out = cleanoutput(obj,door)
+        out = dio.cleanoutput(obj,door)
         return dhttp.HttpResponse(json.dumps(out), content_type="application/json")
 
 @login_required
@@ -143,7 +168,7 @@ def ordervalidation(request):
     """
     if request.method == 'POST':
         post = json.loads(request.body)
-        output,failures = validateorder(post)
+        output,failures = oval.validateorder(post)
         if nestedempty(failures):
             try:
                 ## Use atomic transaction to automatically rollback if a discrepency arises
@@ -193,7 +218,7 @@ def ordervalidation(request):
                             else:
                                 failures['doors'].append(f"Invalid Objects: {component}")
                         if not nestedempty(failures):
-                            raise ValidationException()
+                            raise ValidationExceptionclean()
             except ValidationException:                pass
 
             ## We may have added failures, so have to check again
@@ -227,34 +252,34 @@ def orderoverview(request, orderid = None):
     for door in doors:        
         output = {"door":door.name,
                   "id": door.pk,
-                  "width":measurement.minimizemeasurement(door.open_width),
-                  "height":measurement.minimizemeasurement(door.open_height),
+                  "width":measurement.minimizemeasurement(measurement.tomeasurement(door.open_width)),
+                  "height":measurement.minimizemeasurement(measurement.tomeasurement(door.open_height)),
                   "hand":door.hand,"components":{"slats":[],"hood":[],"bottombar":[],"tracks":[],"pipe":[],"accessories":[]}}
         components = output['components']
         for pipe in models.Pipe.objects.filter(door = door):
-            out = cleanoutput(pipe,door)
+            out = dio.cleanoutput(pipe,door)
             comp = {"id": pipe.pk, "pipediameter":out['pipediameter'],"shaftdiameter":out['shaftdiameter'],"springs":out['springs']}
             components['pipe'].append(comp)
         for hood in models.Hood.objects.filter(door = door):
-            out = cleanoutput(hood,door)            
+            out = dio.cleanoutput(hood,door)            
             comp = {"id": out['pk'], "custom": out['custom'],"baffle":out['baffle']}
             components['hood'].append(comp)
         for tracks in models.Tracks.objects.filter(door = door):
-            out = cleanoutput(tracks,door)
+            out = dio.cleanoutput(tracks,door)
             comp = {"id": out['pk'], "brackets":{"hand":out['hand']}, "standard":out['standard'], "weatherstripping":out['weatherstripping']}
             components['tracks'].append(comp)
         for slats in models.Slats.objects.filter(door = door):
-            out = cleanoutput(slats,door)
+            out = dio.cleanoutput(slats,door)
             comp = {"id": out['pk'], "slat_type":out['slat_type'], "quantity":out['quantity']}
             components['slats'].append(comp)
         for bottombar in models.BottomBar.objects.filter(door = door):
-            out = cleanoutput(bottombar,door)
+            out = dio.cleanoutput(bottombar,door)
             comp = {"id": out['pk'], "slat_type":out['slat_type'],"angle":out['angle'],"bottom_rubber":out['bottom_rubber'],"slope":out['slope']}
             components['bottombar'].append(comp)
         for accessorytype in models.ACCESSORYLIST:
             names = []
             for accessory in accessorytype.objects.filter(door = door):
-                out = cleanoutput(accessory,door)
+                out = dio.cleanoutput(accessory,door)
                 if out.get("kind") is not None:
                     names.append({"id":out['pk'], "name":out['kind']})
                 else:
@@ -265,148 +290,33 @@ def orderoverview(request, orderid = None):
     data = {"order":data}
     return render(request,template,data)
 
-@login_required
-@decorators.require_POST
-def updatedoor(request):
-    if request.method == "POST":
-        doorid = request.POST.get("doorid")
-        door = models.Door.objects.filter(pk = doorid).first()
-        if not door:
-            return dhttp.HttpResponseBadRequest("Invalid DoorID")
-        return dhttp.HttpResponseBadRequest("Nope")
-    else:
-        return dhttp.HttpResponseBadRequest("Invalid Request")
+def outputcomponents(door):
+    """ This function is used for order?orderid= queries and is used to output the required information to populate that edit order page """
+    output = list()
+    ## Pipe> auto > Pipe Dia, Pipe Length, Shaft Size > Shaft Length, cycles
+    ## >>>>> Spring > type , Spring OD , Wire Dia , Stretch
+    for pipe in models.Pipe.objects.filter(door = door):
+        out = dict(type="pipe")
+        out["pipediameter"],out["pipelength"],out["shaftdiameter"],out["shaftlength"],out["cycles"] = pipe.pipediameter,pipe.pipelength,pipe.shaftdiameter,pipe.shaftlength,pipe.cycles
+        out['auto'] = not any([pipe.pipediameter,pipe.pipelength,pipe.shaftdiameter,pipe.shaftlength])
+        o = out["springs"] = list()
+        #for spring in models.Spring.objects.filter()
+        output.append(out)
 
-def cleanoutput(obj, door):
-    """ Returns a dict of values that are formatted for display """
-    output = to_dict(obj)
-    output['doorid'] = door.pk
-    doorinstance = to_doorinstance(door)
-    checkdefaults(doorinstance)
-    
-    if isinstance(obj,models.Pipe):
-        pipeinstance = doorinstance.pipe
-        sockets = pipeinstance.assembly.sockets
-        springs = list(itertools.chain.from_iterable(sockets))
-        output['springs'] = len(springs)
-        ## Blank keys are converted to "Auto" for readability
-        for autokey in ['pipelength','pipediameter','shaftlength','shaftdiameter','springs']:
-            if not output[autokey]:
-                if not springs:
-                    output[autokey] = "Auto"
-        ## If any of the following outputs are None, springs exist 
-        ## and therefore the doorinstance has a value for them
-        if not output['pipelength']:
-            if pipeinstance.pipewidth:
-                width = pipeinstance.pipewidth
-            else:
-                width = doorinstance.maxpipewidth()
-            output['pipelength'] = f"{measurement.tomeasurement(roundtofraction(width,1/16))}"
-        if not output['pipediameter']:
-            output['pipediameter'] = f'{pipeinstance.shell["size"]}"'
-        if not output['shaftlength']:
-            output['shaftlength'] = f"{math.ceil(pipeinstance.required_shaftlength(doorinstance.totalturns))} inches"
-        if not output['shaftdiameter']:
-            output['shaftdiameter'] = f'{pipeinstance.shaft}"'
-
-        output['assembly'] = list()
-        for socket in sockets:
-            for stype,spring in zip(["Outer","Inner"],socket.springs):
-                out = dict(springtype = stype, wirediameter = spring.wirediameter, outerdiameter = spring.od, stretch = f"{roundtofraction(spring.stretch(doorinstance.totalturns),1/16)} inches")
-                output['assembly'].append(out)
-
-    elif isinstance(obj,models.Hood):
-        if output['custom'] is True: output['custom'] = "Standard"
-        else: output['custom'] = "Custom"
-        width = obj.width
-        if not width:
-            width = doorinstance.hood.width
-        output['width'] = width
-    elif isinstance(obj,models.Tracks):
-        bracket = obj.brackets
-
-        output['standard'] = True
-        if any([obj.wall_angle_height, obj.inner_angle_height, obj.outer_angle_height, obj.hole_pattern]):
-            output['standard'] = False
-
-        inner_angle_height = obj.inner_angle_height
-        outer_angle_height = obj.outer_angle_height
-        if not inner_angle_height and not outer_angle_height:
-            inner_angle_height = doorinstance.stopheight
-            outer_angle_height = inner_angle_height
-        elif not outer_angle_height:
-            outer_angle_height = inner_angle_height
-        elif not inner_angle_height:
-            inner_angle_height = outer_angle_height
-        wall_angle_height = obj.wall_angle_height
-        if not wall_angle_height:
-            wall_angle_height = doorinstance.wall_length
-        output['inner_angle_height'] = f"{inner_angle_height} ({measurement.minimizemeasurement(inner_angle_height)})"
-        output['outer_angle_height'] = f"{outer_angle_height} ({measurement.minimizemeasurement(outer_angle_height)})"
-        output['wall_angle_height'] = f"{wall_angle_height} ({measurement.minimizemeasurement(wall_angle_height)})"
-        output['hole_pattern'] = obj.hole_pattern
-            
-        output['hand'] = bracket.hand
-        if not output['hand']:
-            output['hand'] = door.hand
-        bracketsize = bracket.bracket_size
-        if not bracketsize:
-            bracketsize = doorinstance.bracketplate.size
-        output['bracketsize'] = bracketsize
-    elif isinstance(obj,models.Slats):
-        slats = doorinstance.curtain[0]
-        endlocks = obj.endlocks
-
-        output['slat_type_name'] = obj.get_slat_type_display()
-        output['quantity'] = obj.quantity
-        output['facing'] = obj.get_face_display()
-        if not output['quantity']:
-            output['quantity'] = "Auto"
-            output['slatquantity'] = slats.getnumberslats()
-        if not output['width']:
-            output['width'] = measurement.tomeasurement(doorinstance.curtain.slatlength(slats))
-        output['width'] = f"{measurement.minimizemeasurement(output['width'])} ({measurement.convertmeasurement(output['width'])})"
-        if endlocks:
-            output['endlocktype'] = endlocks.get_endlock_type_display()
-            output['endlockcontinuous'] = endlocks.continuous
-            elocks,windlocks = slats.endlockpattern.getendlocks(output['slatquantity'])
-            output['endlockquantity'] = elocks
-            output['windlockquantity'] = windlocks
-
-    elif isinstance(obj,models.BottomBar):
-        bbar = doorinstance.curtain[-1]
-
-        output['face_name'] = obj.get_face_display()
-        output['slat_type_name'] = obj.get_slat_type_display()
-        if not output['width']:
-            output['width'] = measurement.tomeasurement(bbar.slatlength)
-        output['width'] = f"{measurement.minimizemeasurement(output['width'])} ({measurement.convertmeasurement(output['width'])})"
-        if output['angle'] == "D": output['angle'] = "Double"
-        else: output['angle'] = "Single"
-        if not output['slope_height']: output['slope'] = False
-        else:
-            output['slope'] = True
-            output['slope_height'] = f"{measurement.minimizemeasurement(output['slope_height'])} ({measurement.convertmeasurement(output['slope_height'])})"
-            output['slope_side_name'] = obj.get_slope_side_display()
-    elif isinstance(obj,models.ACCESSORYLIST):
-        if obj.get("kind") is not None:
-            output["name"]=out['kind']
-        else:
-            output["name"]=obj.__class__.__name__
-
+    ## Tracks > Weatherstripping, Wall Angle [auto], Guide [auto], Custom Guide Holes
+    ## >>>>> Brackets > Auto > Bracket Size, Drive Side
+    ## Hood > Baffle, Style > Custom Desciption
+    ## Slats > Slat Type, Face, Assembly, Endlocks > Continuous, Length [auto], Quantity [auto]
+    ## Bottom Bar > Face, Type, Length [auto], Angle, Rubber > Custom Description, Slope > Long Side, Height
+    ## Accessories
     return output
-
-def _set_slats(doorinstance):
-    """ Helper function for automatically populating slats (when slats are not explicitly set) """
-    slatsection = doorinstance.curtain.slatsections()[0]
-    slatsection.slats = slatsection.getnumberslats(doorinstance.curtain.curtainshort())
 
 @login_required
 @decorators.require_GET
 def springsetter(request,doorid = None):
     """ Displays various spring options for a given door """
     template = "doors/springsetter.html"
-    if not request.method == "GET":
+    if request.method != "GET":
         return dhttp.HttpResponseNotAllowed(["GET",])
     if not doorid:
         data = dict()
@@ -416,8 +326,8 @@ def springsetter(request,doorid = None):
     if not door:
         return dhttp.HttpResponseBadRequest("Invalid Door ID")
 
-    doorinstance = to_doorinstance(door)
-    checkdefaults(doorinstance)
+    doorinstance = dio.to_doorinstance(door)
+    oval.checkdefaults(doorinstance)
 
     data = getspringoptions()
     data.update(dict(doorid = None, name = None, cyclerating = None, pipesizes = None, weightopen = None, weightclosed = None))
@@ -427,6 +337,8 @@ def springsetter(request,doorid = None):
     data['pipesizes'] = [(pipe,stats['radius']+stats['barrelringsize']) for pipe,stats in classes.PIPESIZES.items()]
     if doorinstance.curtain.slatsections():
         data['weightopen'],data['weightclosed'] = doorinstance.curtain.weight_open,doorinstance.curtain.weight_closed
+    if doorinstance.pipe.assembly.sockets:
+        data['assembly'] = dio.serialize_assembly(doorinstance.pipe.assembly)
     return render(request,template,data)
 
 
@@ -446,46 +358,44 @@ def API_assemblies(request):
     """
     data = request.GET
     doorid = data.get("doorid")
-    if doorid is None:
-        return dhttp.HttpResponseServerError("Not Implemented")
-    door = models.Door.objects.filter(doorid=doorid).first()
-    if not door:
-        return dhttp.HttpResponseBadRequest("Invalid Door ID")
-    
+    if doorid:
+        door = models.Door.objects.filter(doorid=doorid).first()
+        if not door:
+            return dhttp.HttpResponseBadRequest("Invalid Door ID")
+        doorinstance = dio.to_doorinstance(door)
+    else:
+        clearopening_width, clearopening_height = data.get("clearopening_width"), data.get("clearopening_height")
+        slattype, castendlocks = data.get("slattype"), data.get("castendlocks")
+        try: doorinstance = generate_door(clearopening_width, clearopening_height, slattype, castendlocks)
+        except:
+            return dhttp.HttpResponseBadRequest("Invalid Door Arguments")
+
+    if not doorinstance:
+        return dhttp.HttpResponseBadRequest("Invalid Door")
+
     pipe = data.get("pipe")
-    doorinstance = to_doorinstance(door)
     if pipe:
         doorinstance.pipe.shell =pipe
     if not doorinstance.pipe.shell:
         return dhttp.HttpResponseBadRequest("Invalid Pipe")
 
-    _set_slats(doorinstance)
+    oval.checkdefaults(doorinstance)
+    #oval._set_slats(doorinstance)
 
-    assemblies = classes.generate_all_assemblies(doorinstance.torqueperturn, doorinstance.totalturns, pipe = doorinstance.pipe)
+    assemblies = pipecalculations.generate_all_assemblies(doorinstance.torqueperturn, doorinstance.totalturns, pipe = doorinstance.pipe)
     output= []
     ## index is used for generically naming Assemblies:
     ## i.e.- "1-Spring Assembly", "1-Spring Assembly - 2", "2-Spring Assembly", etc
     index = collections.defaultdict(int)
 
-    def outputSpring(spring):
-        return {"gauge":spring.wirediameter, "od":spring.od, "coils": spring.coils}
-
     for assembly in assemblies:
-        i = 0
-        out = {'castings' : []}
-        output.append(out)
-        for socket in assembly.sockets: ## Sockets are Castings
-            o = []
-            out['castings'].append(o)
-            for spring in socket.springs:
-                if not isinstance(spring,classes.Spring):
-                    raise ValueError("Unknown Socket Element")
-                o.append(outputSpring(spring))
-                i+=1
+        i = sum(len(casting.springs) for casting in assembly.sockets)
+        out = dio.serialize_assembly(assembly)
         if index[i] == 1: count = ""
         else: count = f" - {index[i]}"
         index[i] += 1
         out['name'] = f"{i}-Spring Assembly{count}"
+        output.append(out)
     return dhttp.JsonResponse({"success":True,"results":{'assemblies':output} })
 
 @login_required
@@ -493,35 +403,64 @@ def API_assemblies(request):
 def API_turns(request):
     data = request.GET
     doorid = data.get("doorid")
-    if doorid is None:
-        return dhttp.HttpResponseServerError("Not Implemented")
-    door = models.Door.objects.filter(doorid=doorid).first()
-    if not door:
-        return dhttp.HttpResponseBadRequest("Invalid Door ID")
-    
-    doorinstance = to_doorinstance(door)
-    pipe = data.get("pipe")
-    if not pipe:
-        if not doorinstance.pipe.shell:
-            return dhttp.HttpResponseBadRequest("Door requires Pipe Size")
-    else:
-        doorinstance.pipe.shell = pipe
+    door = None
+    if doorid is None or doorid == "":
+        height,slat,pipe = data.get("height"),data.get("slat"),data.get("pipe")
+        torque_open, torque_closed = data.get("requiredtorque_open","requiredtorque_closed")
+        try: height = measurement.Imperial(height)
+        except: height = None
+        try: slat = classes.Slat.parsetype(slat)
+        except: slat = None
+        try: pipe = constants.PIPESIZE[int(pipe)]
+        except: pipe = None
+        try: torque_open = float(torque_open)
+        except: torque_open = None
+        try: torque_closed = float(torque_closed)
+        except: torque_closed = None
+        if not (height and slat and pipe and torque_open and torque_closed):
+            return dhttp.HttpResponseBadRequest("Invalid Request")
+        
+        turnstoraise = calculations.door_turnstoraise(height, pipe['radius'] + pipe['barrelringsize'], slat.increaseradius)
+        torqueperturn = calculations.pipe_torqueperturn(torque_closed, torque_open, turnstoraise)
+        preturns = calculations.pipe_preturns(torque_open, torqueperturn)
+        turns = calculations.pipe_totalturns(turnstoraise, preturns)
 
-    _set_slats(doorinstance)
-    return dhttp.JsonResponse({"success":True,"results":{"turns":doorinstance.totalturns,"turnstoraise":doorinstance.turnstoraise,"preturns":doorinstance.preturns}})
+        return dhttp.JsonResponse({"success":True,"results":{"turns":turns,"turnstoraise":turnstoraise,"preturns":preturns}})
+
+    else:
+        door = models.Door.objects.filter(doorid=doorid).first()
+        if not door:
+            return dhttp.HttpResponseBadRequest("Invalid Door ID")
+    
+        doorinstance = dio.to_doorinstance(door)
+        pipe = data.get("pipe")
+        if not pipe:
+            if not doorinstance.pipe.shell:
+                return dhttp.HttpResponseBadRequest("Door requires Pipe Size")
+        else:
+            doorinstance.pipe.shell = pipe
+
+        oval.checkdefaults(doorinstance)
+        #oval._set_slats(doorinstance)
+        return dhttp.JsonResponse({"success":True,"results":{"turns":doorinstance.totalturns,"turnstoraise":doorinstance.turnstoraise,"preturns":doorinstance.preturns}})
 
 @login_required
 @decorators.require_GET
 def API_torque(request):
     data = request.GET
     doorid = data.get("doorid")
-    if doorid is None:
-        return dhttp.HttpResponseServerError("Not Implemented")
-    door = models.Door.objects.filter(doorid=doorid).first()
-    if not door:
-        return dhttp.HttpResponseBadRequest("Invalid Door ID")
-    
-    doorinstance = to_doorinstance(door)
+    if doorid:
+        door = models.Door.objects.filter(doorid=doorid).first()
+        if not door:
+            return dhttp.HttpResponseBadRequest("Invalid Door ID")
+        doorinstance = dio.to_doorinstance(door)
+    else:
+        slattype, endlocks = data.get("slattype"), data.get("endlocks")
+        clearopening_width, clearopening_height = data.get("clearopening_width"),data.get("clearopening_height")
+        try:
+            doorinstance = methods.basic_torsion_door(width = clearopening_width, height = clearopening_height, slat = slattype, endlocks = endlocks)
+        except:
+            return dhttp.HttpResponseForbidden("Invalid Request")
     pipe = data.get("pipe")
     if not pipe:
         if not doorinstance.pipe.shell:
@@ -529,7 +468,8 @@ def API_torque(request):
     else:
         doorinstance.pipe.shell = pipe
 
-    _set_slats(doorinstance)
+    oval.checkdefaults(doorinstance)
+    #oval._set_slats(doorinstance)
     return dhttp.JsonResponse({"success":True,"results":{"requiredtorqueclosed":doorinstance.requiredtorque_closed,"requiredtorqueopen":doorinstance.requiredtorque_open,"torqueperturn":doorinstance.torqueperturn}})
 
 @login_required
@@ -555,16 +495,18 @@ def API_setsprings(request):
     assembly = data.get("assembly")
     if assembly:
         assembly = json.loads(assembly)
-        castings = assembly.get("castings")
+        castings = assembly.get("castings", False)
     if not assembly or not castings:
         return dhttp.JsonResponse({"success":False,"reason":"nocastings"})
     
-    doorinstance = to_doorinstance(door)
+    doorinstance = dio.to_doorinstance(door)
     doorinstance.pipe.shell = pipesize
 
-    _set_slats(doorinstance)
+    oval.checkdefaults(doorinstance)
+    #oval._set_slats(doorinstance)
     
     assemblyinstance = doorinstance.pipe.assembly
+    assemblyinstance.clear()
     for casting in castings:
         castingobj = classes.Socket()
         for spring in casting:
@@ -584,11 +526,97 @@ def API_setsprings(request):
         for i,spring in enumerate(casting.springs):
             models.Spring(pipe = pipeobj, spring_type = models.Spring.TYPE[i][0],
                           outer_diameter = spring.od, wire_diameter = spring.wirediameter,
-                          casting = c).save()
+                          uncoiledlength= spring.uncoiledlength, casting = c).save()
 
     orderid = door.order.pk
     return dhttp.JsonResponse({"success":True,"target": reverse("orderoverview",args = (orderid,))})
 
+class Search(LoginRequiredMixin,dviews.TemplateView):
+    """ Order Search View """
+    template_name = "doors/search.html"
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        req = self.request.GET
+        query = req.get("q")
+        if query:
+            query = query.strip()
+        context['q'] = query
+
+        if query:
+            results = search.parse(query)
+        else:
+            results = models.Order.objects.filter(_delete_flag = False)
+        page = req.get("page",1)
+        try: page = int(page)
+        except: pass
+        pagin = paginator.Paginator(results,PAGINATION_SIZE)
+        try:
+            results = pagin.get_page(page)
+        except:
+            page = 1
+            results = pagin.get_page(page)
+        context['orders'] = results
+        return context
+
 @login_required
-def searchorder(request):
-    pass
+@decorators.require_http_methods(["GET",])
+def deleteorder(req,orderid):
+    order = get_object_or_404(models.Order,pk = orderid)
+    order._delete_flag = True
+    order.save()
+    return redirect("search")
+
+@login_required
+@decorators.require_GET
+def sketchoverview(request,doorid):
+    template = "doors/sketches.html"
+    get_object_or_404(models.Door, pk = doorid)
+    data = {"doorid":doorid}
+    return render(request,template,data)
+
+@login_required
+@decorators.require_GET
+def API_sketch(request):
+    data = request.GET
+    doorid = data.get("doorid")
+    door = get_object_or_404(models.Door, pk = doorid)
+    doorinstance = dio.to_doorinstance(door)
+    output = sketches.shop_drawing(doorinstance, door.order)
+    return dhttp.JsonResponse({"success":True,"sketch": output})
+
+DOORVALIDSTATS = ["turnstoraise","totalturns","preturns","hangingweight_closed","hangingweight_open","torqueperturn","requiredtorque_closed","requiredtorque_open"]
+PIPEVALIDSTATS = ["shell",]
+@login_required
+@decorators.require_http_methods(["GET",])
+def API_stats(req,*args, **kwargs):
+    q = req.GET
+    slattype,castendlocks = q.get("slattype"), q.get("castendlocks")
+    clearopening_width, clearopening_height = q.get("clearopening_width"), q.get("clearopening_height")
+    query = q.get("query","")
+    doorq,pipeq = [],[]
+
+    for qu in query.split(","):
+        val = qu.split(".")
+        name = ""
+        if len(val) > 1: name,val = val
+        else: val = val[0]
+        if name == "pipe":
+            if val in PIPEVALIDSTATS: pipeq.append(val)
+        elif not name:
+            if val in DOORVALIDSTATS: doorq.append(val)
+
+
+    if not doorq+pipeq: return dhttp.JsonResponse({"success":True,"door": {}})
+
+    door = generate_door(clearopening_width, clearopening_height, slattype, castendlocks)
+    output = {}
+
+    for att in doorq:
+        output[att] = getattr(door,att)
+    if pipeq:
+        output['pipe'] = {}
+        for att in pipeq:
+            output['pipe'][att] = getattr(door.pipe,att)
+
+
+    return dhttp.JsonResponse({"success":True,"door": output})

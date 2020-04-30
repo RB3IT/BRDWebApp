@@ -41,7 +41,7 @@ class Items(models.Model):
     location = models.TextField(blank=True, null=True)
     sublocation = models.TextField(blank = True, null = True)
     notes = models.TextField(blank = True, null = True)
-    image = models.ImageField(blank = True, null = True, upload_to="static\inventory\images")
+    image = models.ImageField(blank = True, null = True, upload_to="inventory\images")
 
     class Meta: 
         db_table = 'items'
@@ -109,3 +109,11 @@ class Stock(models.Model):
 
 class StockAdmin(admin.ModelAdmin):
     list_display = ("itemid","date","include")
+
+class StockWidgets(models.Model):
+    """ Stock GUI widgets that are associated with an Inventory Item. """
+    itemid = models.ForeignKey("Items", models.DO_NOTHING, db_column = "itemid", null = False, blank = False)
+    widget = models.CharField(max_length = 250, null = False, blank = False)
+
+class StockWidgetsAdmin(admin.ModelAdmin):
+    list_display = ("itemid","widget")

@@ -1,61 +1,73 @@
-var lineiter = 0;
-
 $(document).ready(function () {
-    addAutoCalcLine();
+    autoAddPopulate();
     }
 );
 
-function autoAddPopulate(inputstring) {
-    if (!inputstring) { return; };
-    let addlines = inputstring.split("\n");
-    console.log(addlines);
-    $(".autoaddline").each(function () { $(this).remove();});
+function autoAddPopulate() {
+    /* Populates Auto Calc with the initial lines */
+    // No input
+    if (!autolines) { return; }
+    // Convert to array
+    let addlines = autolines.split("\n");
+
+    $(".autoaddline").empty();
+
     for (line of addlines) {
-        if (!line || line == "None") { continue; };
-        addAutoCalcLine();
-        $(".autoadd").last().val(line);
-    };
-    addAutoCalcLine();
-    autoCalc();
-};
+        // Skip empty lines
+        if (!line || line === "None") { continue; }
+        // Get new widget
+        let linewidget = addAutoCalcLine(line);
+    }
+    // Add new line at end
+    addAutoCalcLine();    
+}
 
-function addAutoCalcLine() {
-    $("#calcholder").append(
-        `<div class="inlineclear autoaddline" data-line="${lineiter}"><span class="glyphicon glyphicon-remove-sign" aria-hidden="true" onclick="removeAutoAdd(${lineiter})"></span><input class="autoadd" type="text" name="${lineiter}"  data-line=${lineiter}\><input type="button" onClick="AutoCalcNewandSum(${lineiter})" value="Calculate" data-line=${lineiter}\><\div>`
-    );
-    lineiter = lineiter + 1;
-    $('.autoadd').keypress(function (event) {
+function addAutoCalcLine(value) {
+    /* Adds a new Auto Calc Line */
+    // Create and add line
+    let line = $(`<div class="inlineclear autoaddline">
+    <i class="material-icons cancel-button" onclick="removeAutoAdd(this);"></i>
+    <input class="autoadd" type="text"\>
+    <input type="button" onClick="autoCalcNewandSum();" value="Calculate"\>
+<\div>`);
+    $("#calcholder").append(line);
+    line.keypress(function (event) {
         event.stopPropagation();
-        if (event.which == 13) {
-            let widget = $(this);
-            AutoCalcNewandSum(widget.attr("data-line"));
-            widget.blur();
-        };
+        if (event.which === 13) {
+            autoCalcNewandSum();
+            $(this).blur();
+        }
     });
-    $(".autoadd").last().focus();
-};
+    line.find("input.autoadd").focus();
 
-function AutoCalcNewandSum(iteration) {
-    checkNewLine(iteration);
+    // Add value if available
+    if (typeof value !== "undefined") {
+        line.find("input.autoadd").val(value);
+    }
+
+    // Auto Calculate
+    autoCalc();
+
+    return line;
+}
+
+function autoCalcNewandSum() {
+    /* Primary usage loop: Check if a new line needs to be added, Send Update to API, AutoCalc GUI */
+    if (!$(".autoaddline").length || $(".autoaddline:last input.autoadd").val()) {
+        addAutoCalcLine();
+    }
     updateSums();
     autoCalc();
-};
-
-function checkNewLine(iteration) {
-    let autoadds = $(".autoadd");
-    let lastiter = autoadds.eq(autoadds.length - 1).attr("name");
-    if (iteration == lastiter) {
-        addAutoCalcLine();
-    };
-};
+}
 
 function updateSums() {
+    /* Calls the API to update the item's sums */
     let date = `${year}-${month}-1`;
     let autoadds = $(".autoadd");
     let sumsstring = "";
     for (let auto of $.makeArray(autoadds)) {
         sumsstring = sumsstring + (auto.value ? "\n" + auto.value : "");
-    };
+    }
     $.post('/inventory/api/item',
         { itemid: itemid, date: date, sums:  sumsstring},
         // Success Function here //,
@@ -63,9 +75,10 @@ function updateSums() {
     ).fail(
         // Failure Matters?
         );
-};
+}
 
 function autoCalc() {
+    /* Executes the Auto Calculation and sets the GUI */
     let autoadds = $(".autoadd");
     let sum = 0;
     for (i = 0; i < autoadds.length; i++) {
@@ -73,24 +86,17 @@ function autoCalc() {
         input = input.replace("x", "\*");
         let value = math.eval(input);
         if (!isNaN(value)) {
-            sum = sum + value
-        };
-    };
+            sum = sum + value;
+        }
+    }
     $("#autoCalcTotal").text(sum);
-};
+}
 
-function removeAutoAdd(iteration) {
-    let autoadds = $(".autoadd");
-    if (autoadds.length == 1) {
-        autoadds.eq(0).val(0);
-        autoCalc();
-        return;
-    };
-    let line = $(`div[data-line="${iteration}"]`);
-    if (!line) { return; };
+function removeAutoAdd(span) {
+    let line = $(span).parents(".autoaddline");
     line.remove();
-    autoCalc();
-};
+    autoCalcNewandSum();
+}
 
 function autoCalcToTotal() {
     let autototal = $("#autoCalcTotal").text();
@@ -98,8 +104,8 @@ function autoCalcToTotal() {
     let total = $(elementid);
     total.val(autototal);
     total.blur();
-};
+}
 
 function escapeIDSelector(myid) {
     return "#" + myid.replace(/(:|\.|\[|\]|,|=|@)/g, "\\$1");
-};
+}

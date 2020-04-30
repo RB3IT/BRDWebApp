@@ -111,7 +111,8 @@ def getcostforinventory(*inventory):
     Returns None (mutates the item in-place by setting .cost attribute).
     """
     for item in inventory:
-        costs = models.Costs.objects.filter(itemid=item.itemid,date__lte=item.date)
+        lastday = almethods.getlastdaydatetime(year = item.date.year, month = item.date.month)
+        costs = models.Costs.objects.filter(itemid=item.itemid,date__lte=lastday)
         if not costs: item.cost = 0
         else:
             ## QuerySets do not support Negative Indexing

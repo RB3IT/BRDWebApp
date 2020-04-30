@@ -27,24 +27,24 @@ function showSnackbar(options) {
     /* Shows the snackbar
 
         Options:
-            alerttype: Snackbar Alert Style ("sucess","info","warning","danger"). Default style is "info".
-            label: Snackbar Label (leading bold text). If not supplied, this will reflect the alerttype.
+            type: Snackbar Alert Style ("sucess","info","warning","danger"). Default style is "info".
+            label: Snackbar Label (leading bold text). If not supplied, this will reflect the type.
             text: Additional text descrining the alert. By default, this is an empty string.
     */
     checkSnackbar();
-    let defaults = { alerttype: "info", label: null, text: "" };
-    for (let k of ["alerttype", "label", "text"]) {
+    let defaults = { type: "info", label: null, text: "" };
+    for (let k of ["type", "label", "text"]) {
         if (typeof options[k] !== "undefined") {
             defaults[k] = options[k];
         };
     };
-    if (["success", "info", "warning", "danger"].indexOf(defaults["alerttype"]) < 0) {
+    if (["success", "info", "warning", "danger"].indexOf(defaults["type"]) < 0) {
         throw new Error("Invalid Alerttype");
     };
     if (defaults["label"] == null) {
-        defaults["label"] = defaults['alerttype'].charAt(0).toUpperCase() + defaults['alerttype'].slice(1) + "!"
+        defaults["label"] = defaults['type'].charAt(0).toUpperCase() + defaults['type'].slice(1) + "!"
     };
-    SNACKBAR.removeClass().addClass(`alert alert-${defaults["alerttype"]}`);
+    SNACKBAR.removeClass().addClass(`alert alert-${defaults["type"]}`);
     $("#snackbar-label").html(defaults["label"]);
     $("#snackbar-text").html(defaults["text"]);
     SNACKBAR.fadeIn(400).delay(2000).fadeOut(400);

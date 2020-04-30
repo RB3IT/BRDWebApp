@@ -8,9 +8,11 @@ $(document).ready(function () {
 function bindAccordions(accordions) {
     /* Binds the given accordions */
     for (let accordion of accordions) {
-        $(accordion).on("click", function () {
+        accordion = $(accordion);
+        accordion.on("click", function () {
             accordion.toggleClass("active");
             let panel = $(accordion.find(".accordion-panel"));
+            console.log(panel, accordion.hasClass("active"));
             if (accordion.hasClass("active")) {
                 panel.css("maxHeight", panel[0].scrollHeight + "px");
             } else {

@@ -19,12 +19,23 @@
 {% block content %}
     <div style="text-align:center;">
         <h1>Output Coils</h1>
-        <button id="outputButton" type="button" onclick="outputCoils();">Output</button>
-
+        <div class="floatleft">
+            <button id="statsButton" type="button" onclick="getStats();">Stats</button>
+            <button id="outputButton" type="button" onclick="outputCoils();">Print</button>
+        </div>
+        <div class="floatleft">
+            <label><input type="checkbox" id="received" value="Received" onchange="filterCoils();" checked/>Received</label>
+            <label><input type="checkbox" id="opened" value="Opened" onchange="filterCoils();" checked/>Opened</label>
+            <label><input type="checkbox" id="finished" value="Finished" onchange="filterCoils();" checked/>Finished</label>
+        </div>
+        <div class="floatleft">
+            <label><input type="checkbox" id="5.28" value="5.28" onchange="filterCoils();" checked/>5.28</label>
+            <label><input type="checkbox" id="5.34" value="5.34" onchange="filterCoils();" checked/>5.34</label>
+        </div>
         <table id="coilTable">
             <thead>
                 <tr>
-                    <th><input id="outputSelectall" type="checkbox"/></th>
+                    <th><input id="outputSelectall" type="checkbox" onchange="selectAll();" /></th>
                     <th>ID</th>
                     <th>Size</th>
                     <th>Weight</th>
@@ -35,6 +46,7 @@
             <tbody>
             </tbody>
         </table>
+        <button id="loadmorebtn" type="button" onclick="loadCoils()">Load More</button>
     </div>
 {% endblock %}
 
@@ -45,13 +57,6 @@
         var page = 0;
         var pagestart = null;
         var loadingFlag = false;
-        $(document).ready(function () {
-            loadCoils();
-            $("#outputSelectall").change(function () {
-                let w = $("#outputSelectall");
-                let coils = $("#coilTable").find("tr.coil input[type=checkbox]");
-                coils.prop("checked", w[0].checked);
-            });
-        });
+        $(document).ready(loadCoils);
     </script>
 {% endblock %}

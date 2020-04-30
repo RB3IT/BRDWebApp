@@ -14,17 +14,17 @@
             font-size:2em;
             font-weight:bold;
         }
-        table~tr:first-child{
-            font-weight:bold;
-        }
+        table.headersleft td:first-child {
+    font-weight: bold;
+}
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="centerall">
         <img src="{{coilqr}}" />
-        <table>
-            <caption>Coil {{coil.pk}}</caption>
+        <table class="headersleft">
+            <caption style="caption-side:top;text-align:center;">Coil {{coil.pk}}<i class="material-icons"><a class="beveled" href="editcoil/{{coil.pk}}" style="text-decoration: none;color:greenyellow; background-color:beige; padding:3px; border-radius:25px;">edit</a></i></caption>
             <tbody>
                 <tr>
                     <td>Size</td>
@@ -39,8 +39,8 @@
                     <td>{{coil.width}}</td>
                 </tr>
                 <tr>
-                    <td>Date Recieved</td>
-                    <td>{{coil.recieved}}</td>
+                    <td>Date Received</td>
+                    <td>{{coil.received}}</td>
                 </tr>
                 <tr>
                     <td>Date Opened</td>
@@ -54,7 +54,7 @@
                 </tr>
                 <tr>
                     <td>Notes</td>
-                    <td><textarea readonly>{{coil.notes}}</textarea></td>
+                    <td><textarea id="notes">{{coil.notes}}</textarea></td>
                 </tr>
             </tbody>
         </table>
@@ -66,17 +66,18 @@
     var pk = {{coil.pk}};
     function setCoil(state){
         /* Check in with the API signifying that the coil state */
-        $.post("api/coil", { coil : pk , state : state  }, function(data){ success(data,state); })//.fail(badSetTurns);
+        $.post("{% url "coilstate" %}", { coil : pk , state : state  }, function(data){ success(data,state); })//.fail(badSetTurns);
     };
     function success(data,state){
         /* Shows that the API has been successful posted to */
         if (data.result=="success"){
-            showSnackbar({ alerttype: "success", label: "Success", text: `Coil is ${state}ed` });
+            showSnackbar({ type: "success", label: "Success", text: `Coil is ${state}ed` });
             let btn = $(`#${state}button`);
             let spn = $(`#${state}span`);
             btn.prop("disabled",true);
             spn.text(data.date);
         };
     };
+    $(document).ready(ready=>$("#notes").prop("readonly",true));
 </script>
 {% endblock %}

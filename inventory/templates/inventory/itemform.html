@@ -78,28 +78,20 @@
                            value="{{item.quantity}}"/>  </td>
             </tr>
         </table>
-        <div class="inlineclear column">
-            <div style="padding:5px">
-                <div>
-                    <span class="subheading"> Quick Add: <span id="autoCalcTotal">0</span></span>
-                    <button onclick="autoCalcToTotal()">Commit Value</button>
-                </div>
-                <div id="calcholder" style="padding:5px;"></div>
-            </div>
-            <div style="clear:both;padding:5px">
-                <span class="subheading"">Notes:</span><br />
-                <textarea class="autoupdate" id="notes" rows="10" cols="100" value="{{item.usernotes}}"
-                          data-itemid="{{item.itemid}}"
-                          data-attribute="usernotes" data-description="{{item.description}}"></textarea>
-            </div>
-        </div>
+        {% include "inventory/QuickAddWidget.html" %}
         <div class="inlineclear column">
             <span class="subheading">Description</span>
             <p style="font-size:1.5em;">{{item.notes}}</p>
             {% if item.image %}
+                <script>console.log("{{item.image.url}}")</script>
                 <img src="{{  item.image.url }}" alt="No Image" height="400" width = "400"/>
             {% endif %}
         </div>
+        {% if widgets %}
+            {% for widget in widgets %}
+                {% include widget %}
+            {% endfor %}
+        {% endif %}
         {% endif %}
 
     </div>
@@ -110,7 +102,6 @@
 {% block scripts %}
     <script src="{% static 'core/scripts/security.js' %}"></script>
     <script src="{% static 'inventory/scripts/inventory.js' %}"></script>
-    <script src="{% static 'inventory/scripts/autocalc.js' %}"></script>
     <script src="{% static 'inventory/scripts/autoupdate.js' %}"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/3.13.3/math.min.js"></script>
 
@@ -119,11 +110,13 @@
     <script>
         var month = {{month}};
         var year = {{year}};
+        var date = "{{year}}-{{month}}-1";
         var itemid = `{{item.itemid}}`;
+        var autolines = `{{item.sums}}`;
+        var inventoryid = null;
 
     {% if item %}
         $(document).ready(function(){
-            autoAddPopulate(`{{item.sums}}`);
             $("#notes").val(`{{item.usernotes}}`);
         }
         );

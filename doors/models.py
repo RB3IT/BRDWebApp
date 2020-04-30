@@ -42,14 +42,25 @@ def validate_measurement(measure):
         value conforms to the standard parsing requirements.
     """
     ## For auto-calculation, just succeed
-    if not measure: return True
+    if not measure: return measure
     inches = measurement.convertmeasurement(measure)
-    return isinstance(inches,float) and inches > 0
+    if not isinstance(inches,float) or not inches > 0:
+        raise ValueError("Invalid Measurment")
+    return inches
 
 def run_validations(model):
-    for (name,method) in model.VALIDATIONS:
-        if not method(model):
-            raise exceptions.ValidationError(f"Invalid format for field {name}")
+    if hasattr(model,"MEASUREMENTFIELDS"):
+        for measure in model.MEASUREMENTFIELDS:
+            if getattr(model,measure):
+                try: inches = validate_measurement(getattr(model,measure))
+                except:
+                    raise exceptions.ValidationError(f"Invalid measurement for {model.__class__.__name__} field {measure}")
+                setattr(model,measure,inches)
+    if hasattr(model,"VALIDATIONS"):
+        for (name,method) in model.VALIDATIONS:
+            if not method(model):
+                raise exceptions.ValidationError(f"Invalid format for field {name}")
+    return True
 
 # Create your models here.
 class Order(models.Model):
@@ -62,25 +73,29 @@ class Order(models.Model):
     customer_po = models.CharField(max_length = 50, blank = True, null = True)
     work_order = models.CharField(max_length = 50, blank = True, null = True)
     description = models.CharField(max_length = 100, blank = True, null = True)
+    _delete_flag = models.BooleanField(null = False, default = False)
+
+    def to_form(self):
+        return dict(customer = self.customer.name, customer_po = self.customer_po, work_order = self.work_order,
+                    ## even though date is displayed %m/%d/%Y, the value options only accepts %Y/%m/%d
+                    origin_date = self.origin_date.strftime("%Y-%m-%d"), due_date = self.due_date.strftime("%Y-%m-%d"),
+                    description = self.description)
 
 class Door(models.Model):
     """ Gives general information about a specific Door """
     doorid = models.AutoField(primary_key = True)
     order = models.ForeignKey('Order',models.DO_NOTHING, blank = True)
     name = models.CharField(max_length = 50)
-    open_width = models.CharField(max_length = 50)
-    open_height = models.CharField(max_length = 50)
+    open_width = models.FloatField()
+    open_height = models.FloatField()
     hand = models.CharField(max_length = 40, choices = HAND)
 
     def clean_fields(self,exclude = None):
         run_validations(self)
         return super().clean_fields(self,exclude = exclude)
-    def validate_height(self):
-        return validate_measurement(self.open_height)
-    def validate_width(self):
-        return validate_measurement(self.open_width)
-    VALIDATIONS = [("height",validate_height),
-                   ("width",validate_width)]
+
+    MEASUREMENTFIELDS = ["open_width","open_height"]
+    VALIDATIONS = []
 
     def to_kwargs(self):
         return dict(clearopening_height=self.open_height, clearopening_width= self.open_width)
@@ -89,19 +104,15 @@ class Hood(models.Model):
     hoodid = models.AutoField(primary_key = True)
     door = models.ForeignKey("Door", models.DO_NOTHING, blank = True)
     custom = models.BooleanField(null = False,blank = False)
-    width = models.CharField(max_length = 50, null = True, blank = True)
+    width = models.FloatField(null = True, blank = True)
     baffle = models.BooleanField(null = False, default = False)
     description = models.TextField(null = True, blank = True)
 
     def clean_fields(self, exclude = None):
         run_validations(self)
         return super().clean_fields(exclude)
-    def validate_width(self):
-        if self.width:
-            return validate_measurement(self.width)
-        return True
-    VALIDATIONS = [("width",validate_width),
-        ]
+    
+    MEASUREMENTFIELDS = ["width",]
 
 class Brackets(models.Model):
     bracketid = models.AutoField(primary_key = True)
@@ -119,9 +130,9 @@ class Pipe(models.Model):
 
     pipeid = models.AutoField(primary_key = True)
     door = models.ForeignKey("Door", models.DO_NOTHING, blank = True, null = True)
-    pipelength = models.CharField(max_length = 50, blank = True, null = True)
+    pipelength = models.FloatField(blank = True, null = True)
     pipediameter = models.CharField(max_length = 50, blank = True, null = True)
-    shaftlength = models.CharField(max_length = 50, blank = True, null = True)
+    shaftlength = models.FloatField(max_length = 50, blank = True, null = True)
     shaftdiameter = models.CharField(max_length = 50, blank = True, null = True)
     cycles = models.CharField(choices = CYCLES, max_length = 50)
 
@@ -131,17 +142,9 @@ class Pipe(models.Model):
     def clean_fields(self, exclude = None):
         run_validations(self)
         return super().clean_fields(exclude)
-    def validate_pipelength(self):
-        if self.pipelength:
-            return validate_measurement(self.pipelength)
-        return True
-    def validate_shaftlength(self):
-        if self.shaftlength:
-            return validate_measurement(self.shaftlength)
-        return True
-    VALIDATIONS = [("pipelength",validate_pipelength),
-                   ("shaftlength",validate_shaftlength),
-        ]
+    
+    MEASUREMENTFIELDS = ["pipelength","shaftlength"]
+    VALIDATIONS = []
 
     def to_kwargs(self):
         kwargs = dict()
@@ -160,9 +163,12 @@ class Spring(models.Model):
     outer_diameter = models.FloatField()
     wire_diameter = models.FloatField()
     uncoiledlength = models.FloatField()
-
+    stretch = models.FloatField(blank = True,null = True)
     casting = models.IntegerField(blank = True, null = True)
 
+    @property
+    def coiledlength(self):
+        return self.uncoiledlength / self.wire_diameter
     def to_kwargs(self):
         return dict(wire = self.wire_diameter, od = self.outer_diameter, uncoiledlength = self.uncoiledlength)
 
@@ -170,21 +176,18 @@ class Tracks(models.Model):
     trackid = models.AutoField(primary_key = True)
     door = models.ForeignKey("Door", models.DO_NOTHING, blank = True)
     brackets = models.ForeignKey("Brackets", models.DO_NOTHING, blank = True, null = True)
-    wall_angle_height = models.CharField(max_length = 50, blank = True, null = True)
-    inner_angle_height = models.CharField(max_length = 50, blank = True, null = True)
-    outer_angle_height = models.CharField(max_length = 50, blank = True, null = True)
+    wall_angle_height = models.FloatField(max_length = 50, blank = True, null = True)
+    inner_angle_height = models.FloatField(max_length = 50, blank = True, null = True)
+    outer_angle_height = models.FloatField(max_length = 50, blank = True, null = True)
     hole_pattern = models.TextField(blank = True, null = True)
     weatherstripping = models.BooleanField(null = False, default = False)
     
     def clean_fields(self, exclude = None):
         run_validations(self)
         return super().clean_fields(exclude)
-    def validate_height(self):
-        if self.height:
-            return validate_measurement(self.height)
-        return True
-    VALIDATIONS = [("height",validate_height),
-        ]
+    
+    MEASUREMENTFIELDS = ["wall_angle_height","inner_angle_height","outer_angle_height",]
+    VALIDATIONS = []
 
 class Slats(models.Model):
     ASSEMBLE = (
@@ -194,7 +197,7 @@ class Slats(models.Model):
     slatid = models.AutoField(primary_key = True)
     door = models.ForeignKey("Door", models.DO_NOTHING, blank = True)
     slat_type = models.CharField(choices = SLATS,max_length = 50)
-    width = models.CharField(max_length = 50,null = True, blank = True)
+    width = models.FloatField(max_length = 50,null = True, blank = True)
     quantity = models.PositiveIntegerField(null = True, blank = True)
     assemble = models.CharField(max_length = 50, choices = ASSEMBLE)
     face = models.CharField(max_length = 50, choices = FACES)
@@ -204,12 +207,9 @@ class Slats(models.Model):
     def clean_fields(self, exclude = None):
         run_validations(self)
         return super().clean_fields(exclude)
-    def validate_width(self):
-        if self.width:
-            return validate_measurement(self.width)
-        return True
-    VALIDATIONS = [("width",validate_width),
-        ]
+    
+    measurement = ["width",]
+    VALIDATIONS = []
 
     def to_kwargs(self):
         endlockpattern = None
@@ -237,21 +237,18 @@ class BottomBar(models.Model):
     door = models.ForeignKey("Door", models.DO_NOTHING, blank = True)
     slat_type = models.CharField(choices = SLATS, max_length = 50)
     face = models.CharField(max_length = 50, choices = FACES)
-    width = models.CharField(max_length = 50, null = True, blank = True)
+    width = models.FloatField(max_length = 50, null = True, blank = True)
     angle = models.CharField(max_length = 50, choices = ANGLE)
     bottom_rubber = models.CharField(max_length = 50)
-    slope_height = models.CharField(max_length = 50, null = True, blank = True)
+    slope_height = models.FloatField(null = True, blank = True)
     slope_side = models.CharField(max_length = 50, choices = HAND)
 
     def clean_fields(self, exclude = None):
         run_validations(self)
         return super().clean_fields(exclude)
-    def validate_width(self):
-        if self.width:
-            return validate_measurement(self.width)
-        return True
-    VALIDATIONS = [("width",validate_width),
-        ]
+    
+    MEASUREMENTFIELDS = ["width","slope_height"]
+    VALIDATIONS = []
 
     def to_kwargs(self):
         return dict(slatweight=classes.Slat(self.slat_type), edge = self.bottom_rubber, slope = self.slope_height)
@@ -289,13 +286,16 @@ class GearCover(Accessory):
     hand = models.CharField(max_length = 50, choices = HAND)
 
 class Facia(Accessory):
-    length = models.CharField(max_length = 50, blank = True, null = True)
-    height = models.CharField(max_length = 50, blank = True, null = True)
+    length = models.FloatField(blank = True, null = True)
+    height = models.FloatField(blank = True, null = True)
+
+    MEASUREMENTFIELDS = ["length","height'"]
 
 class FeederSlat(Accessory):
     face = models.CharField(max_length = 50, choices = FACES)
     slattype = models.CharField(max_length = 50, choices = SLATS)
-    length = models.CharField(max_length = 50, blank = True, null = True)
+    length = models.FloatField(blank = True, null = True)
+    MEASUREMENTFIELDS = ["length",]
 
 class CustomAccessory(Accessory):
     name = models.CharField(max_length = 50)

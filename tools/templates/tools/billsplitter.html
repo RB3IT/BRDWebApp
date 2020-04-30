@@ -57,10 +57,11 @@
         return parseFloat(value) || 0.00
     };
 
-    function enterBlur(e) {
+    function enterBlur(e, callback) {
         /* Convenience function to have inputs blur on enter key */
         if (e.keyCode == 13) {
             $(e.target).blur();
+            if (callback !== undefined) callback();
         };
     };
 
@@ -135,7 +136,7 @@
 
     function bindInputs() {
         /* Binds Table Inputs (data-val="tcost") to recalculate on blur and blur on Enter Key, and Cancel button to remove Row */
-        $('input[data-val=tcost]').keyup(enterBlur).blur(updateTable);
+        $('input[data-val=tcost]').keyup(e=>enterBlur(e,addRow)).blur(updateTable);
         $('i.cancel-button').click(removeRow);
     };
 

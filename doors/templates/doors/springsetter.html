@@ -14,14 +14,26 @@
         .sidebar-assembly ~ table ~td:first-child{
             font-weight:bold;
         }
+        #doorbutton > i {
+            color:lawngreen;
+        }
+        #doorbutton:disabled > i {
+            color:gray;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="component"  style="text-align:center;">
         <div class="floatleft">
+            {% if doorid %}
             <h2>{{name}}</h2>
-            {% if doorid %}<button id="savebutton" type="button" title="Set Springs for Door"><i class="material-icons" style="color:lawngreen;">assignment_turned_in</i></button>{% endif %}
+            <button id="savebutton" type="button" title="Set Springs for Door" onclick="submitSprings();"><i class="material-icons" style="color:lawngreen;">assignment_turned_in</i></button>
+            <button id="reloadbutton" type="button" title="Reload Springs" onclick="reloadAssembly();"><i class="material-icons" style="color:orangered;">settings_backup_restore</i></button>
+            {% else %}
+            <h2>No Door</h2>
+            <button id="doorbutton" title="Get a Door" alt="Get a Door"><i class="material-icons" onclick="getDoorPopup();">arrow_drop_down_circle</i></button>
+            {% endif %}
         </div>
         <table>
             <tbody>
@@ -96,15 +108,16 @@
 {% block scripts %}
 {% csrf_token %}
 <script>
-    var doorid = {{doorid}};
+    var doorid = {{doorid | default_if_none:"null"}};
     // springprec and odprec are set before loading scripts in order to template springs
     var springprec = {{springprecision}};
     var odprec = {{odprecision}};
     // List containing the raw data of the assemblies in the sidebar
     var SIDEBAR = [];
+    // Initial Assembly
+    var assembly = null;
 
     $(document).ready(function(){
-        {% if doorid %}$("#savebutton").attr("onclick","submitSprings();");{% endif %}
         $("#pipesize").on("change",updateTurns);
         {% if cyclerating %}$("#cyclerating").val({{cyclerating}});{% endif %}{% if pipesize %}$("#pipesize").val({{pipesize}});{% endif %}{% if weightopen %}$("#weightopen").val({{weightopen}});{% endif %}{% if weightclosed %}$("#weightclosed").val({{weightclosed}});{% endif %}
         setupCSRFAjax();
@@ -112,14 +125,19 @@
         updateTurns();
         updateTorque();
         {% endif %}
+        {% if doorid %}
+        reloadAssembly();
+        {% endif %}
     });
 </script>
 {% if doorid %}
 <script>
+    {% if assembly %}assembly = {{assembly | safe}};{% endif %}
+
     function submitSprings() {
         let assembly = getAssembly();
         if (!assembly.castings.length) {
-            showSnackbar({ alerttype: "danger", label: "No Castings", text: "No Castings Created" });
+            showSnackbar({ type: "danger", label: "No Castings", text: "No Castings Created" });
             return;
         };
 
@@ -128,11 +146,11 @@
                 window.location.assign(result.target);
             } else {
                 if (result.reason == "nocastings") {
-                    showSnackbar({ alerttype: "danger", label: "No Castings", text: "No Castings Created" });
+                    showSnackbar({ type: "danger", label: "No Castings", text: "No Castings Created" });
                 } else if (result.reason == "badcastings") {
-                    showSnackbar({ alerttype: "danger", label: "Bad Castings", text: "Invalid Castings" });
+                    showSnackbar({ type: "danger", label: "Bad Castings", text: "Invalid Castings" });
                 } else {
-                    showSnackbar({ alerttype: "danger", label: "Bad Request", text: result });
+                    showSnackbar({ type: "danger", label: "Bad Request", text: result });
                 };
             };
         };
@@ -141,10 +159,18 @@
         $.post("/doors/springs/api/set", { doorid: doorid, pipe: pipesize, assembly: JSON.stringify(assembly)}, callback).fail(callback);
     };
 </script>
+{% else %}
+<script>
+    var popup, door;
+    window.onbeforeunload = function () {
+        if (popup) popup.close();
+    };
+</script>
 {% endif %}
 <script src="{% static 'core/scripts/autocomplete.js' %}"></script>
 <script src="{% static 'core/scripts/errorbubble.js' %}"></script>
 <script src="{% static 'core/scripts/security.js' %}"></script>
+<script src="{% static 'core/scripts/betteregexp/betteregexp.js' %}"></script>
 <script src="{% static 'core/scripts/measureit.js' %}"></script>
 <script src="{% static 'core/scripts/accordion.js' %}"></script>
 <script src="{% static 'core/scripts/toggle.js' %}"></script>
@@ -152,6 +178,9 @@
 <script src="{% static 'doors/scripts/springsgui.js' %}"></script>
 <script>
     // TODO: Remove this after testing
-    $(document).ready(generateToggle);
+    $(document).ready(function () {
+        var measureit = new MeasureIt();
+        generateToggle();
+    });
 </script>
 {% endblock %}

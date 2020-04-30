@@ -26,7 +26,7 @@ function updateID(event) {
     let ele = $("#customer");
     let elelist = $("#customer_list");
     if (!ele | !elelist | typeof ele == undefined | typeof elelist == undefined | !ele.val()) { return; };
-    let selected = elelist.children(`option[value=${ele.val()}]`);
+    let selected = elelist.children(`option[value="${ele.val()}"]`);
     if (!selected.length | typeof ele == undefined) { return; };
     let id = selected.attr('data-id');
     $("#customer_id").attr("value", id);
@@ -102,7 +102,6 @@ function hideSubmitIndicator() {
 
 
 function redirectoOrder(response) {
-    console.log("Redirecting");
     /* Callback to redirect to the submitted order */
     ordernumber = response.ordernumber;
     // Server Error
@@ -112,8 +111,6 @@ function redirectoOrder(response) {
     }
     // Otherwise, redirect to order summary
     window.location.href = `/doors/orderinfo/${ordernumber}`;
-    console.log(`/doors/orderinfo/${ordernumber}`);
-    console.log(window.location.href);
 };
 
 function processSubmitOrderError(error) {
@@ -122,7 +119,7 @@ function processSubmitOrderError(error) {
 
     // Unknown (server/network) Error
     if (typeof data == "undefined") {
-        showSnackbar({ alerttype: "warning", label: "Unknown Submittion Error", text: `Failed to submit Order` });
+        showSnackbar({ type: "warning", label: "Unknown Submittion Error", text: `Failed to submit Order` });
         return;
     }
 
@@ -142,7 +139,7 @@ function showSubmitOrderError(error) {
     hideSubmitIndicator();
     let errorcode = "Unknown";
     if (error.status) { errorcode = error.status; };
-    showSnackbar({ alerttype: "danger", label: `Failed to Save (${errorcode})`, text: "please attempt to resubmit" });
+    showSnackbar({ type: "danger", label: `Failed to Save (${errorcode})`, text: "please attempt to resubmit" });
 };
 
 function showResponseErrors(errors) {
@@ -189,7 +186,7 @@ function showResponseErrors(errors) {
         };
         // Unknown Error
         if (!ele) {
-            showSnackbar({ alerttype: "warning", label: "Unknown Submittion Error", text: `(${error})` });
+            showSnackbar({ type: "warning", label: "Unknown Submittion Error", text: `(${error})` });
         };
         showError(ele, text);
         checkScrolled();

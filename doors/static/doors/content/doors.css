@@ -122,7 +122,9 @@ div.popup > *{
 }
 
 .popup-table caption{
+    caption-side:top;
     font: 1.75em bolder;
+    max-width: 30ch;
 }
 
 .popup-table tr>td:first-child{

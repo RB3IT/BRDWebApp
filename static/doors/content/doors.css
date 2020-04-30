@@ -101,23 +101,13 @@ label > * {
 
 div.popup {
     visibility: hidden;
-    position: fixed;
-    z-index: 1000;
-    background-color:white;
-    
-    border: 3px outset;
-    -webkit-box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.75);
-    -moz-box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.75);
-    box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.75);
-
     top: 50%;
     left: 50%;
     max-width: 50%;
     max-height: 75%;
     padding: 1em;
-
-    align-items:center;
-    text-align:center;
+    align-items: center;
+    text-align: center;
 }
 
 div.popup > *{
@@ -127,10 +117,14 @@ div.popup > *{
 .popup-table{
     border:1px solid;
     border-collapse:collapse;
+    margin-left:auto;
+    margin-right:auto;
 }
 
 .popup-table caption{
+    caption-side:top;
     font: 1.75em bolder;
+    max-width: 30ch;
 }
 
 .popup-table tr>td:first-child{
@@ -142,3 +136,7 @@ div.popup > *{
         padding: .25em;
         min-width: 2em;
     }
+
+.invalid{
+    background-color:rgba(250,0,0,25);
+}

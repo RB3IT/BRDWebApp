@@ -19,6 +19,8 @@ urlpatterns = [
     path("lengthestimator",views.LengthEstimator.as_view(), name = "lengthestimator"),
     path("shoppinglist",views.OfficeShoppingList.as_view(), name = "shoppinglist"),
     path("shoppinglist/",views.update_shoppinglist, name = "shoppinglist_api"),
+    path("shoppinglist/download",views.download_shoppinglist, name = "shoppinglist_download_api"),
+    path("springcalculator",views.SpringsTool.as_view(), name = "springstool"),
 
     ## Default Landing Page
     path(r"",views.Home.as_view(), name='toolshome'),
