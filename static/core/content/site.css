@@ -16,36 +16,39 @@ textarea {
     max-width: 280px;
 }
 
-/* styles for validation helpers */
-.field-validation-error {
-    color: #b94a48;
+/* Accordion */
+.accordion {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: .25em;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    transition: 0.4s;
 }
 
-.field-validation-valid {
-    display: none;
+    .active+.accordion:hover {
+        background-color: #ccc;
+    }
+
+.accordion-panel {
+    padding: 0 18px;
+    background-color: white;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease-out;
 }
 
-input.input-validation-error {
-    border: 1px solid #b94a48;
-}
+/* /Accordion */
 
-input[type="checkbox"].input-validation-error {
-    border: 0 none;
-}
-
-.validation-summary-errors {
-    color: #b94a48;
-}
-
-.validation-summary-valid {
-    display: none;
-}
-
-
-.nonlink {
-    /* Remove Link Styling */
-    text-decoration: none;
-    color: black;
+.add-button:before {
+    color: lawngreen;
+    cursor: pointer;
+    vertical-align: middle;
+    content: "add_circle";
 }
 
 .beveled {
@@ -58,56 +61,26 @@ input[type="checkbox"].input-validation-error {
     box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
 }
 
+/* Bordered Table */
+.bordered-table {
+    /* What it says on the tin */
+    border-collapse: collapse;
+}
+
+    .bordered-table, .bordered-table th, .bordered-table td {
+        border: 1px solid black;
+    }
+
+        .bordered-table td, .bordered-table th {
+            padding: 3px;
+        }
+
+/* Bordered Table */
+
 button.beveled:active {
     -moz-box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
     -webkit-box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
     box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
-}
-
-.floatleft {
-    /* Floats a div's content left-to-right.
-
-        Technically, only one of float-left and inline-flex are necessary,
-        but inline-flex is not completely covered.
-    */
-    /*  Float left disabled for now in order to properly center
-        float:left;*/
-    display:inline-flex;
-}
-
-    .floatleft > * {
-        margin: 5px;
-    }
-
-    .floatleft:after {
-        clear:both;
-        display:block;
-    }
-
-.centered{
-    align-content:center;
-    align-items: center;
-    text-align: center;
-}
-
-.noglow:active {
-    /* Removes Outline from Focused Button */
-    outline: 0px;
-}
-
-.section {
-    border: solid 1px;
-    overflow:auto;
-    margin: 3px;
-    padding:3px;
-}
-.section > h3 {
-    margin:1em;
-}
-
-.vcenter {
-    display: table-cell;
-    vertical-align: middle;
 }
 
 .cancel-button:before {
@@ -117,25 +90,13 @@ button.beveled:active {
     content: "cancel";
 }
 
-.false-icon:before{
-    color: red;
-    vertical-align:middle;
-    content:"close"
+.centered {
+    align-content: center;
+    align-items: center;
+    text-align: center;
 }
 
-.true-icon:before {
-    color: lawngreen;
-    vertical-align: middle;
-    content: "check"
-}
-
-.add-button:before{
-    color:lawngreen;
-    cursor: pointer;
-    vertical-align: middle;
-    content:"add_circle";
-}
-
+/* Error Bubble */
 .errorbubble-container {
     position: absolute;
     z-index: 50;
@@ -195,3 +156,136 @@ button.beveled:active {
         margin-left: -5px;
         margin-top: -4px;
     }
+
+/* /Error Bubble */
+
+.floating {
+    /* A "Floating" Div/Element */
+    position: fixed;
+    z-index: 1000;
+    background-color: white;
+    border: 3px outset;
+    -webkit-box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 5px 5px 5px 0px rgba(0,0,0,0.75);
+}
+
+/* Floating Sidebar */
+
+.sidebar {
+    /* Styling for a floating sidebar (should also have .floating) */
+    left: 0;
+    top: 25%;
+    max-height: 50%;
+    max-width: 20em;
+    border-left: none;
+    padding: .5em;
+    overflow-y: auto;
+}
+
+    .sidebar > * {
+        /* Todo... Something? I don't remember what this is for */
+    }
+
+/* /Floating Sidebar */
+
+.floatleft {
+    /* Floats a div's content left-to-right.
+
+        Technically, only one of float-left and inline-flex are necessary,
+        but inline-flex is not completely covered.
+    */
+    /*  Float left disabled for now in order to properly center
+        float:left;*/
+    display: inline-flex;
+}
+
+    .floatleft > * {
+        margin: 5px;
+    }
+
+    .floatleft:after {
+        clear: both;
+        display: block;
+    }
+
+.noglow:active {
+    /* Removes Outline from Focused Button */
+    outline: 0px;
+}
+
+.nonlink, .nonlink:hover {
+    /* Remove Link Styling */
+    text-decoration: none;
+    color: black;
+}
+
+@media print {
+    .no-print, .no-print * {
+        /* Hide Element/Children from Print */
+        display: none !important;
+    }
+}
+
+.section {
+    /* A div format */
+    border: solid 1px;
+    overflow: auto;
+    margin: 3px;
+    padding: 3px;
+}
+
+    .section > h3 {
+        margin: 1em;
+    }
+
+table.headersleft td:first-child {
+    font-weight: bold;
+}
+
+/* Truth Icons */
+.false-icon:before {
+    color: red;
+    vertical-align: middle;
+    content: "close"
+}
+
+.true-icon:before {
+    color: lawngreen;
+    vertical-align: middle;
+    content: "check"
+}
+
+/* /Truth Icons */
+
+/* Validation Helpers */
+.field-validation-error {
+    color: #b94a48;
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+input.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+input[type="checkbox"].input-validation-error {
+    border: 0 none;
+}
+
+.validation-summary-errors {
+    color: #b94a48;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+/* /Validation Helpers */
+
+.vcenter {
+    display: table-cell;
+    vertical-align: middle;
+}

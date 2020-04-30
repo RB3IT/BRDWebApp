@@ -20,6 +20,11 @@
 {% endblock %}
 
 {% block content %}
+<div>
+    <form action={% url "shoppinglist_download_api" %} method="get">
+        <input type="submit" class="btn btn-primary" value="Download Shopping List"/>
+    </form>
+</div>
 <table class="table">
     <thead>
         <tr>

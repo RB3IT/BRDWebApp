@@ -30,7 +30,7 @@ textarea {
     transition: 0.4s;
 }
 
-    .active, .accordion:hover {
+    .active+.accordion:hover {
         background-color: #ccc;
     }
 
@@ -214,10 +214,17 @@ button.beveled:active {
     outline: 0px;
 }
 
-.nonlink {
+.nonlink, .nonlink:hover {
     /* Remove Link Styling */
     text-decoration: none;
     color: black;
+}
+
+@media print {
+    .no-print, .no-print * {
+        /* Hide Element/Children from Print */
+        display: none !important;
+    }
 }
 
 .section {
@@ -231,6 +238,10 @@ button.beveled:active {
     .section > h3 {
         margin: 1em;
     }
+
+table.headersleft td:first-child {
+    font-weight: bold;
+}
 
 /* Truth Icons */
 .false-icon:before {

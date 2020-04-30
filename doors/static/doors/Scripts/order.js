@@ -25,9 +25,8 @@ var DOORCOMPONENT = `
                             <div data-type="doorinfo">
                                 <div class="floatleft" style="align-items:center;">
                                     <label>Door Name<input type="text" name="name" /></label>
-                                    <label>Clear Height<input name="clearheight"type="text" class="measureit" /></label>
                                     <label>Clear Width<input name="clearwidth"type="text" class="measureit" /></label>
-                                    <label>Cycles<input name="cycles" type="text" list="springcycles" /></label>
+                                    <label>Clear Height<input name="clearheight"type="text" class="measureit" /></label>
                                     <div><span style="font-weight:bold;margin-right:-5px;">Hand</span><label class="toggle" data-value="hand" data-on="Right" data-off="Left" data-checked style="vertical-align:middle;"></label></div>
                                     <div><span style="font-weight:bold;margin-right:-5px;">Full Seal</span><label class="toggle" data-value="fullseal" data-on="Seal" data-off="" data-callback="toggleSeal" style="vertical-align:middle;"></label></div>
                                 </div>
@@ -50,8 +49,9 @@ var PIPECOMPONENT = `<div class="component" data-type="pipe">
                         <h4>Pipe<i class="material-icons cancel-button" /></h4>
                         <label class="toggle" data-value="autocalculation" data-on="Auto" data-off="Manual" data-callback='showDataType(this,"pipeinfo");' data-checked>Pipe Information</label>
                         <div class="toggleable boxed" data-type="pipeinfo">
-                            <button type="button" onclick="addSpring(this);" style="display:block;">Add Spring</button>
+                            <!-- Disabled for now: Might be removed completely in future-- <button type="button" onclick="addSpring(this);" style="display:block;">Add Spring</button> -->
                             <div class="floatleft vcenter">
+                                <label>Cycles<input data-value="cycles" type="text" list="springcycles" /></label>
                                 <label>Pipe Diameter
                                     <select data-value="pipediameter">
                                         <option value="4">4 Inch</option>
@@ -369,7 +369,7 @@ function addComponent(btn,component) {
     // For Door and Non-complete components
     element.find("i.cancel-button").on("click", removeComponent);
     generateToggle();
-    measureit_rebind();
+    measureit.rebind_all();
     bindQuantities();
 
     // Additional Bindings
@@ -390,6 +390,7 @@ function addComponent(btn,component) {
     else if (component == "accessories") {
         element.find("select[data-value=accessorytype]").change(updateSubcomponent);
     };
+    return element;
 };
 
 function bindQuantities() {
@@ -546,11 +547,11 @@ function updateSubcomponent() {
     subdiv.empty();
     cmp = $(ACCESSORYSUBS[value]);
     subdiv.append(cmp);
-    if (value == "facia") {
-        measureit_rebind();
+    if (value === "facia") {
+        measureit.rebind_all();
     }
-    else if (value == "feederslat") {
-        measureit_rebind();
+    else if (value === "feederslat") {
+        measureit.rebind_all();
     }
     else if (value == "hardware") {
         updateHardwareEndlocks(cmp);
@@ -618,7 +619,6 @@ function collectDoor(door) {
     output.clearheight = info.find("input[name=clearheight]").val();
     output.clearwidth = info.find("input[name=clearwidth]").val();
     output.hand = getToggleValue(info.find("label[data-value=hand]"));
-    output.cycles = info.find("input[name=cycles]").val();
     for (comp of door.children("[data-type=components]").children(".component")) {
         // Add each component of Door
         output.components.push(collectComponent($(comp)));
@@ -645,15 +645,16 @@ function collectPipe(component) {
     let output = { type:type, springs: [] };
 
     output.autocalculation = getToggleValue(component.find("[data-value=autocalculation]"));
-    for (let val of ["pipediameter", "pipelength", "shaftdiameter", "shaftlength"]) {
+    for (let val of ["pipediameter", "pipelength", "shaftdiameter", "shaftlength","cycles"]) {
         output[val] = component.find(`[data-value=${val}]`).val()
     };
 
+    /* Currently Disabled
     component.find("[data-type=spring]").each(function () {
         let springoutput = findAndProcessComponents($(this));
         output.springs.push(springoutput);
     });
-
+    */
     return output;
 };
 
@@ -675,8 +676,201 @@ function processComponent(element, output) {
     if (element.hasClass("toggle")) {
         value = getToggleValue(element);
     }
+    else if (element.attr('type') == 'checkbox'){
+        value = element.prop("checked");
+    }
     else {
         value = element.val();
-    };
+    }
+    console.log(key, value);
     output[key] = value;
 };
+
+/*<><><><><><><><><><><><><><><><><><><><><><><>
+ 
+                  LOADING
+  
+ <><><><><><><><><><><><><><><><><><><><><><><>*/
+
+function getLoadOrder() {
+    /* Call the Order API to load the order */
+    $.get("/doors/order/api/order",
+        { "orderid": orderid },
+        loadOrder
+    ).fail(badLoadOrder);
+};
+
+function badLoadOrder() {
+    showSnackbar({ type: "warning", label: "Server Failure", text: `Failed to Load Order` })
+};
+
+function loadOrder(order) {
+    if (!order || !order.success) {
+        showSnackbar({ type: "warning", label: "Order Failure", text: `Failed to Load Order` })
+        return;
+    };
+    // Job Form data is handled by the Job js
+    for (let door of order.doors) {
+        console.log(door)
+        // Populate door
+        let ele = addComponent(null, "door");
+        loadDoor(ele, door);
+        let compdiv = ele.children('[data-type="components"]');
+        for (let component of door.components) {
+            let method;
+            switch(component.type){
+                case "BottomBar":
+                    method = loadBottombar;
+                    break;
+                case "Hood":
+                    method = loadHood;
+                    break;
+                case "Pipe":
+                    method = loadPipe;
+                    break;
+                case "Slats":
+                    method = loadSlats;
+                    break;
+                case "Tracks":
+                    method = loadTracks;
+                    break;
+            }
+            if (method) {
+                method(component,compdiv);
+            };
+        };
+    };
+};
+
+function gcd(a, b) {
+    if (b < 0.0000001) return a;                // Since there is a limited precision we need to limit the value.
+
+    return gcd(b, Math.floor(a % b));           // Discard any fractions due to limitations in precision.
+};
+
+function convertToTuple(val) {
+    let feet, inches, numerator, denominator;
+    inches = Math.floor(val);
+    val -= inches;
+    feet = Math.floor(inches / 12);
+    inches = inches % 12;
+
+    if (val > 0) {
+        let len = val.toString().length - 2;
+
+        denominator = Math.pow(10, len);
+        numerator = val * denominator;
+
+        let divisor = gcd(numerator, denominator);
+
+        numerator /= divisor;
+        denominator /= divisor;
+    }
+    else if (val == 0) {
+        numerator = 0
+        denominator = 1;
+    }
+    else { throw new Error("Failed to convert to tuple") };
+    return [feet, inches, numerator, denominator];
+};
+
+function loadDoor(ele, door) {
+    let info = ele.children("div[data-type=doorinfo]");
+    info.find("input[name=name]").val(door.name);
+    let height, width;
+    height = convertToTuple(door.open_height);
+    width = convertToTuple(door.open_width);
+    measureit.setValue(info.find("input[name=clearheight]")[0], height);
+    measureit.setValue(info.find("input[name=clearwidth]")[0], width);
+    let hand;
+    if (door.hand == "Right") { hand = true; }
+    else { hand = false};
+    setToggle(info.find("label[data-value=hand]"), hand);
+};
+
+function loadBottombar(component, parent) {
+    let ele = addComponent(parent, "bottombar");
+    setToggle(ele.find(".toggle[data-value='facing']"), component.face == "I");
+    ele.find("select[data-value='slattype']").val(component.slat_type);
+    setToggle(ele.find(".toggle[data-value='autolength']"), component.width == null);
+    if (component.width) { measureit.setValue(ele.find("input[data-value='slatlength']")[0], convertToTuple(component.width)) };
+    if (component.angle == "S") { ele.find("select[data-value='angle']").val("single"); }
+    setToggle(ele.find(".toggle[data-value='bottomrubber']"), component.bottom_rubber == "Standard");
+    if (component.bottom_rubber !== "Standard") { ele.find("textarea[data-value='customrubber']").val(component.bottom_rubber); }
+    setToggle(ele.find(".toggle[data-value='slope']"), component.slope_height == null);
+    if (component.slope_height !== null) {
+        setToggle(ele.find(".toggle[data-value='slopelongside']"), component.slope_side == "R");
+        measureit.setValue(ele.find("input[data-value='slopeheight']")[0], convertToTuple(component.slope_height));
+    }
+};
+
+function loadHood(component, parent) {
+    let ele = addComponent(parent, "hood");
+    setToggle(ele.find(".toggle[data-value='baffle']"), component.baffle);
+    setToggle(ele.find(".toggle[data-value='standardhood']"), !component.custom);
+    setToggle(ele.find(".toggle[data-value='autolength']"), component.width == null);
+    if (component.custom) {
+        if (component.width != null) {
+            measureit.setValue(ele.find("input[data-value='hoodlength']")[0], convertToTuple(component.width));
+        }
+        ele.find("textarea[data-value='hooddescription']").val(component.description);
+    }
+};
+
+function loadPipe(component, parent) {
+    let ele = addComponent(parent, "pipe");
+    // manual pipe is not a single statistic
+    if (component.cycles != "12500" || component.pipediameter != null || component.pipelength != null || component.shaftdiameter != null || component.shaftlength != null) {
+        setToggle(ele.find(".toggle[data-value='autocalculation']"), false);
+        ele.find("input[data-value='cycles']").val(component.cycles);
+        ele.find("select[data-value='pipediameter']").val(component.pipediameter);
+        ele.find("select[data-value='shaftdiameter']").val(component.shaftdiameter);
+        if (component.pipelength) {
+            measureit.setValue(ele.find("input[data-value='pipelength']")[0], convertToTuple(component.pipelength));
+        }
+        if (component.shaftlength) {
+            measureit.setValue(ele.find("input[data-value='shaftlength']")[0], convertToTuple(component.shaftlength));
+        }
+    }
+}
+
+function loadSlats(component, parent) {
+    let ele = addComponent(parent, "slats");
+    let typeele = ele.find("select[data-value='slattype']");
+    typeele.val(component.slat_type);
+    typeele.change();
+    setToggle(ele.find(".toggle[data-value='facing']"), component.face == 'I');
+    setToggle(ele.find(".toggle[data-value='assembled']"), component.assemble == 'A');
+    ele.find("select[data-value='endlocks']").val(component.endlocks.endlock_type);
+    ele.find("input[data-value='continuousendlocks']").prop('checked',component.endlocks.continuous);
+    setToggle(ele.find(".toggle[data-value='autolength']"), component.width == null);
+    if (component.width) {
+        measureit.setValue(ele.find("input[data-value='slatlength']")[0], convertToTuple(component.width));
+    }
+    setToggle(ele.find(".toggle[data-value='autoquantity']"), component.quantity == null);
+    if (component.quantity) {
+        ele.find("input[data-value='slatquantity']").val(component.quantity);
+    }
+}
+
+function loadTracks(component, parent){
+    let ele = addComponent(parent, 'tracks');
+    let autobrackets = component.brackets.bracket_size == null && component.brackets.hand == null;
+    setToggle(ele.find(".toggle[data-value='autobrackets']"), autobrackets);
+    if (!autobrackets) {
+        ele.find("select[data-value='bracketsize']").val(component.brackets.bracket_size);
+        setToggle(ele.find(".toggle[data-value='hand']"), component.brackets.hand == "R");
+    }
+    setToggle(ele.find(".toggle[data-value='weatherstripping']"), component.weatherstripping);
+    setToggle(ele.find(".toggle[data-value='autowallangleheight']"), component.wall_angle_height == null);
+    if (component.wall_angle_height) {
+        measureit.setValue(ele.find("input[data-value='wallangleheight']")[0], convertToTuple(component.wall_angle_height));
+    }
+    setToggle(ele.find(".toggle[data-value='autoguideheight']"), component.outer_angle_height == null);
+    if (component.wall_angle_height) {
+        measureit.setValue(ele.find("input[data-value='guideheight']")[0], convertToTuple(component.outer_angle_height) );
+    }
+    if (component.hole_pattern) {
+        ele.find("textarea[data-value='Guide Holes']").val(component.hole_pattern);
+    }
+}

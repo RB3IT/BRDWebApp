@@ -16,12 +16,15 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = [
-    url(r"^api/item$",views.item_api),
+    url(r"^api/item/(?P<itemid>.+?)/(?P<date>\d+-\d+-\d+)", views.inventoryitem_api, name="get_or_create_inventory"),
+    url(r"^api/item$",views.item_api, name="inventory_update"),
+    url(r"^api/itemlist$", views.itemlist_api, name="api_getitem"),
     url(r"^item$",views.Item.as_view()),
     url(r'^index$',views.Index.as_view()),
     url(r'^export$',views.exportinventories),
 
     ## Default Landing Page
     url(r"^coils/",include("coils.urls")),
-    url(r"^",views.MonthSelect.as_view(), name='inventoryhome'),
+    url(r"^springs/", include("springs.urls")),
+    url(r"^$",views.MonthSelect.as_view(), name='inventoryhome'),
 ]

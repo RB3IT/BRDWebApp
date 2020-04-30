@@ -1,4 +1,4 @@
-SOCKETELEMENT = `
+﻿SOCKETELEMENT = `
 <div data-type="socket" style="border:1px black solid;padding:5px;">
     <i class="material-icons cancel-button" />
     <div><span style="font-weight:bold;margin-right:-5px;">Casting Style</span><label class="toggle" data-type="castingtoggle" data-on="Single" data-off="Double" data-callback="changeCasting" data-checked style="vertical-align:middle;"></label></div>
@@ -78,7 +78,7 @@ function bindAutoClear(ele) {
     ele.find("input.autoclear").click(function () {
         $(this).val("");
     });
-};
+}
 
 /***************************************************************************
  *                           GUI CONSTRUCTION
@@ -90,7 +90,7 @@ function addSocket(button) {
     let socket = buildSocketElement();
     parent.append(socket);
     bindSocket(socket);
-};
+}
 
 function bindSocket(socket) {
     /* The bindings for a socket */
@@ -103,7 +103,7 @@ function bindSocket(socket) {
         socket.remove();
         validateAssembly();
     });
-};
+}
 
 function buildSocketElement() {
     /* Builds an Socket Element */
@@ -115,29 +115,29 @@ function buildSocketElement() {
 
     socket.append(double);
     return socket;
-};
+}
 
 function addSpringtoCasting(casting) {
     let springele = buildSpringElement();
     casting.find("tbody").append(springele);
     return springele;
-};
+}
 
 function buildCastingElement() {
     /* Builds a Casting Element. Casting Elements are Tables. */
     return $(CASTINGELEMENT);
-};
+}
 
 function buildSpringElement() {
     /* Builds a Spring Element. Spring Elements are Table Rows. */
     return $(SPRINGELEMENT);
-};
+}
 
 function clearAssembly() {
     /* Removes all castings from the Current */
     $("#assembly>div[data-type='socket']").remove();
     updateAssembly();
-};
+}
 
 function getAssembly() {
     /* Pulls the current Assembly */
@@ -154,14 +154,14 @@ function getAssembly() {
             out['gauge'] = spring.find("input[data-value='wiregauge']").val();
             out['od'] = spring.find("input[data-value='outerdiameter']").val();
             out['coils'] = spring.find("input[data-value='coils']").val();
-            if (out['gauge'] && out['od'] && out['coils']) { outcasting.push(out); };
-        };
+            if (out['gauge'] && out['od'] && out['coils']) { outcasting.push(out); }
+        }
         if (outcasting.length) {
             output.castings.push(outcasting);
-        };
-    };
+        }
+    }
     return output;
-};
+}
 
 function getStoreAssembly() {
     /* Pulls the current Assembly and adds it to the Sidebar (removing it from current display) */
@@ -172,8 +172,8 @@ function getStoreAssembly() {
         storeAssembly(output);
         clearAssembly();
         updateAssembly();
-    };
-};
+    }
+}
 
 function storeAssembly(assembly) {
     /* Adds an Assembly to the Sidebar */
@@ -196,12 +196,12 @@ function storeAssembly(assembly) {
             let sspr = $(SIDEBARSPRING);
             sspr.find("td[data-value='gauge']").html(spring.gauge);
             sacs.append(sspr);
-        };
+        }
         sass.find("table").append(sacs);
-    };
+    }
     $("#savedAssemblies").append(sass);
     bindAccordions([sass]);
-};
+}
 
 function getSidebarInfo(child) {
     /* Gets the pertinant information for a given subelement of a Sidebar Assembly.
@@ -211,7 +211,7 @@ function getSidebarInfo(child) {
     let allassemblies = $("#savedAssemblies .sidebar-assembly");
     let index = allassemblies.index(parent[0]);
     return [index, parent, SIDEBAR[index]];
-};
+}
 
 function removeSidebarAssembly(button) {
     /* Removes the Clicked Assembly from the Sidebar (both DOM and Var) */
@@ -219,13 +219,13 @@ function removeSidebarAssembly(button) {
     let [index, sidebar, obj] = getSidebarInfo(button);
     sidebar.remove();
     SIDEBAR.splice(index, 1);
-};
+}
 
 function sidebarLoadAssembly(button) {
     /* Gets and Loads an Assembly from the Sidebar */
     let [index, sidebar, obj] = getSidebarInfo(button);
     loadAssembly(obj);
-};
+}
 
 function loadAssembly(assembly) {
     /* Replaces the current Assembly with the given one */
@@ -243,40 +243,50 @@ function loadAssembly(assembly) {
             calcSpring(springele);
         }
         bindSocket(socket);
-        if (casting.length == 2) {
+        if (casting.length === 2) {
             socket.find("input[type='checkbox']").prop('checked', false).trigger('change');
-        };
+        }
 
-    };
+    }
     updateAssembly();
     validateAssembly();
-};
+}
 
 /***************************************************************************
  *                           Events
  **************************************************************************/
+function reloadAssembly() {
+    /* Reloads the assembly saved to the database for the current door */
+    if (!doorid || !assembly) return;
+    loadAssembly(assembly);
+}
 
 function generateAssemblies(btn) {
     /* Disable Generate Assemblies Button and Start API call for Viable Assemblies */
     $(btn).prop("disabled", true);
     let pipe = $("#pipesize").val();
-    $.get("/doors/springs/api/assemblies", { doorid: doorid, pipe:pipe}, setAssemblies).fail(badSetAssemblies);
-};
+    if (doorid) {
+        $.get("/doors/springs/api/assemblies", { doorid: doorid, pipe: pipe }, setAssemblies).fail(badSetAssemblies);
+    }
+    else {
+        $.get("/doors/springs/api/assemblies", { clearopening_width: door.clearopening_height, clearopening_height: door.clearopening_height, slattype:door.slattype, castendlocks:door.castendlocks, pipe: pipe }, setAssemblies).fail(badSetAssemblies);
+    }
+}
 
 function setAssemblies(data) {
     /* Callback for API call in generateAssemblies */
     $("#sidebar").find(":button:disabled").remove();
     for (let assembly of data.results.assemblies) {
         storeAssembly(assembly);
-    };
-};
+    }
+}
 
 function badSetAssemblies(data) {
     /* Failure Callback for API call in generateAssemblies */
-    showSnackbar({ alerttype: "danger", label: "Bad Request", text: data });
+    showSnackbar({ type: "danger", label: "Bad Request", text: data });
     let btn = $("#sidebar button:contains(Generate)");
     $(btn).prop("disabled", false);
-};
+}
 
 function toggleSidebar() {
     let toggle = $("#sidebar .toggleable");
@@ -287,8 +297,8 @@ function toggleSidebar() {
     else {
         toggle.addClass("on");
         $("#sidebar .toggleable").css("display", "block");
-    };
-};
+    }
+}
 
 function updateTurns(event) {
     /* Updates the Turns the door will make based on current pipe size */
@@ -305,18 +315,18 @@ function updateTurns(event) {
     //    error: badSetTurns
     //});
     $.get("/doors/springs/api/turns", { doorid: doorid, pipe: pipesize }, setTurns).fail(badSetTurns);
-};
+}
 
 function setTurns(data) {
     /* The successful response for updateTurns */
-    $("#turns").html(data.results.turns);
-    $("#turnstoraise").html(data.results.turnstoraise);
-};
+    $("#turns").prop("data-value", data.results.turns).html(data.results.turns.toFixed(2));
+    $("#turnstoraise").prop("data-value", data.results.turnstoraise).html(data.results.turnstoraise.toFixed(2));
+}
 
 function badSetTurns(data) {
     /* The fail response for updateTurns */
-    showSnackbar({ alerttype: "danger", label: "Bad Request", text: data });
-};
+    showSnackbar({ type: "danger", label: "Bad Request", text: data });
+}
 
 function updateTorque(event) {
     /* Updates the Torque required by the door */
@@ -334,43 +344,43 @@ function updateTorque(event) {
     //});
     $.get("/doors/springs/api/torque", { doorid: doorid, pipe: pipesize }, setTorque).fail(badSetTorque);
     validateAssembly();
-};
+}
 
 function setTorque(data) {
     /* The successful response for updateTorque */
-    $("#torqueopen").html(data.results.requiredtorqueopen);
-    $("#torqueclosed").html(data.results.requiredtorqueclosed);
-    $("#torqueperturn").html(data.results.torqueperturn);
+    $("#torqueopen").prop("data-value", data.results.requiredtorqueopen).html(data.results.requiredtorqueopen.toFixed(2));
+    $("#torqueclosed").prop("data-value", data.results.requiredtorqueclosed).html(data.results.requiredtorqueclosed.toFixed(2));
+    $("#torqueperturn").prop("data-value", data.results.torqueperturn).html(data.results.torqueperturn.toFixed(2));
     validateAssembly();
-};
+}
 
 function badSetTorque(data) {
     /* The fail response for updateTorque */
-    showSnackbar({ alerttype: "danger", label: "Bad Request", text: data });
-};
+    showSnackbar({ type: "danger", label: "Bad Request", text: data });
+}
 
 function changeCasting(event) {
     /* Toggles between Single and Double Spring Castings */
     let ele = getToggle(event.target);
     let assembly = ele.parents("[data-type='socket']");
     let springs = assembly.find("tr[data-type='spring']");
-    if (getToggleValue(ele) == 'Single') {
+    if (getToggleValue(ele) === 'Single') {
         springs.slice(1).hide();
     }
     else {
         springs.slice(1).show();
-    };
+    }
     validateAssembly();
-};
+}
 
 function calculateRequiredLift() {
     /* Calculates the Required Lift-per-Turn */
-    let turns = $("#turnstoraise").text();
-    let liftopen = $("#torqueopen").text(); 
-    let liftclosed = $("#torqueclosed").text();
+    let turns = $("#turnstoraise").prop("data-value");
+    let liftopen = $("#torqueopen").prop("data-value"); 
+    let liftclosed = $("#torqueclosed").prop("data-value");
 
     return (liftclosed - liftopen) / turns;
-};
+}
 
 function getTotalLift() {
     /* Returns the total lift of all Springs on the current Assembly */
@@ -380,23 +390,23 @@ function getTotalLift() {
         let springlift = parseFloat($(this).find("span[data-value='torque']").first().text());
         if (springlift) {
             lift += springlift;
-        };
-    };
+        }
+    }
 
     function castingLift() {
         $(this).find("tr:visible[data-type='spring']").each(springLift);
-    };
+    }
 
     $("#assembly").find("table[data-type='casting']").each(castingLift);
 
     return lift;
-};
+}
 
 function getShaftLength() {
     /* Returns the total shaft length for the current Assembly */
     // Base length for Outside @ 9" + 2" For Bearing/Inside space + 2" For Shaft Support 
     let length = 13;
-    let turns = 1.0 * $("#turns").text();
+    let turns = 1.0 * $("#turns").prop("data-value");
     function springLength() {
         let coils = $(this).find("input[data-value='coils']").val();
         let gauge = $(this).find("input[data-value='wiregauge']").val();
@@ -406,17 +416,17 @@ function getShaftLength() {
             // TODO: This 6 is a placeholder for Casting Length: Make more accurate correction
             springlength += 6;
             length += springlength;
-        };
-    };
+        }
+    }
 
     function castingLength() {
         $(this).find("tr:visible[data-type='spring']").each(springLength);
-    };
+    }
 
     $("#assembly").find("table[data-type='casting']").each(castingLength);
 
     return length;
-};
+}
 
 function getSpring(springele) {
     /* Returns the spring object representation of a spring ele with all stats populated */
@@ -428,7 +438,7 @@ function getSpring(springele) {
         !od || isundefined(od) ||
         !coils || isundefined(coils)) {
         return;
-    };
+    }
     let spring;
     try {
         return calculateSpring({
@@ -438,7 +448,7 @@ function getSpring(springele) {
             cyclerating: cyclerating
         });
     } catch{
-        showSnackbar({ alerttype: "danger", label: "Unknown Spring", text: "Site not programmed to handle the given spring." });
+        showSnackbar({ type: "danger", label: "Unknown Spring", text: "Site not programmed to handle the given spring." });
         return;
     }
 }
@@ -461,20 +471,24 @@ function calcSpring(springele) {
         lengthcoiled = Math.round(spring.lengthcoiled * 1000) / 1000;
         torque = Math.round(spring.torque * 1000) / 1000;
         maxturns = Math.round(spring.maxturns * 1000) / 1000;
-    };
+    }
     springele.find("span[data-value='lengthcoiled']").html(lengthcoiled);
     springele.find("span[data-value='torque']").html(torque);
     springele.find("span[data-value='maxturns']").html(maxturns);
 
-    updateTorqueperTurn();
+    // updateTorqueperTurn(); // I don't know why we're updating this here...
     updateAssembly();
     validateAssembly();
-};
+}
 
 function updateTorqueperTurn() {
-    /* Updates the TorqueperTurn Span element */
-    $("#torqueperturn").html(calculateRequiredLift());
-};
+    /* Updates the TorqueperTurn Span element
+     
+        TODO: I don't know why this function exists....
+     */
+    let v = calculateRequiredLift();
+    $("#torqueperturn").prop("data-value",v).html(v.toFixed(2));
+}
 
 function validateCasting() {
     /* Validates all springs on the casting */
@@ -485,25 +499,25 @@ function validateCasting() {
         let spring = getSpring(springele);
         if (spring) {
             springele.removeClass("invalid");
-            let turns = $("#turns").text();
+            let turns = $("#turns").prop("data-value");
             if (spring.maxturns < turns * .985) {
-                showSnackbar({ alerttype: "danger", label: "Max Turns", text: "Max Turns for this spring is lower or too close to number of Turns." });
+                showSnackbar({ type: "danger", label: "Max Turns", text: "Max Turns for this spring is lower or too close to number of Turns." });
                 springele.addClass("invalid");
             }
             else if (spring.mp / turns * .99 > spring.lift || spring.mp / turns * 1.015 < spring.lift) {
-                showSnackbar({ alerttype: "danger", label: "MP/Turn Error", text: "MP/Turn's for this spring is lower or too close to MP/Turn." });
+                showSnackbar({ type: "danger", label: "MP/Turn Error", text: "MP/Turn's for this spring is lower or too close to MP/Turn." });
                 springele.addClass("invalid");
-            };
+            }
             springs.push(spring);
-        };
-    };
-};
+        }
+    }
+}
 
 function updateAssembly() {
     /* Updates the Displayed Statistics of the current Assembly */
     $("#totallift").html(getTotalLift());
     $("#shaftlength").html(getShaftLength());
-};
+}
 
 function validateAssembly() {
     /* Validates all casting in an assembly and validates the assembly itself */
@@ -512,11 +526,41 @@ function validateAssembly() {
 
     let requiredlift = calculateRequiredLift();
     let lift = getTotalLift();
-    if (!lift) { return; };
+    if (!lift) { return; }
     if (requiredlift * .99 > lift || requiredlift * 1.015 < lift) {
-        showSnackbar({ alerttype: "danger", label: "Unacceptable Torque", text: "Torque is not close enough Torque required (Avg. Torque Req.)." });
+        showSnackbar({ type: "danger", label: "Unacceptable Torque", text: "Torque is not close enough Torque required (Avg. Torque Req.)." });
         castings.each(function () {
             $(this).find("tr[data-type='spring']").addClass("invalid");
         });
-    };
-};
+    }
+}
+
+function getDoorPopup() {
+    /* Triggers the Popup to get or calculate a door */
+    if (popup) return popup.focus();
+    $("#doorbutton").prop("disabled", true);
+    console.log('here')
+    popup = window.open("/doors/doorgen_popup.html", "Set Door", "width=400,height=400");
+    let timer = setInterval(function () {
+        if (popup.closed) {
+            clearInterval(timer);
+            door = popup.door;
+            if (door !== undefined) {
+                $("#weightclosed").val(door.hangingweight_closed);
+                $("#weightopen").val(door.hangingweight_open);
+                $("#torqueclosed").text(door.requiredtorque_closed);
+                $("#torqueopen").text(door.requiredtorque_open);
+                $("#torqueperturn").text(door.torqueperturn);
+                $("#turns").text(door.totalturns);
+                $("#turnstoraise").text(door.turnstoraise);
+                $("#pipesizes").text(door.pipe.shell);
+            }
+            enableDoorButton();
+            popup = undefined;
+        }
+    }, 1000);
+}
+function enableDoorButton() {
+    /* Enables the door button (used after popup is closed) */
+    $("#doorbutton").prop("disabled", null);
+}

@@ -90,6 +90,7 @@
 <script src="{% static 'core/scripts/autocomplete.js' %}"></script>
 <script src="{% static 'core/scripts/errorbubble.js' %}"></script>
 <script src="{% static 'core/scripts/security.js' %}"></script>
+<script src="{% static 'core/scripts/betteregexp/betteregexp.js' %}"></script>
 <script src="{% static 'core/scripts/measureit.js' %}"></script>
 <script src="{% static 'core/scripts/toggle.js' %}"></script>
 <script src="{% static 'doors/scripts/order.js'%}"></script>
@@ -97,7 +98,7 @@
 {% if error %}
         <script>
             $(document).ready( function() {
-                showSnackbar({ alerttype: "danger", label: "Invalid Form:", text: "One or more areas of the form were invalid" });
+                showSnackbar({ type: "danger", label: "Invalid Form:", text: "{{error}}" });
             });
         </script>
 {% endif %}
@@ -118,6 +119,24 @@
                         <label>●</label>
           </div >`));
                 });
-        };
+        }
+    ;
 </script>
+{% if form.orderid%}
+<script>
+    var orderid = {{form.orderid}};
+    var measureit;
+    $(document).ready(function(){
+        measureit = new MeasureIt();
+        getLoadOrder();
+    });
+</script>
+{% else %}
+<script>
+    var measureit;
+    $(document).ready(function () {
+        measureit = new MeasureIt();
+    });
+</script>
+{% endif %}
 {% endblock %}

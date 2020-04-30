@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="centered">
-    <h1>{{order.fields.customer}}</h1>
+    <h1>{{order.fields.customer}}<i class="material-icons"><a class="nonlink" href="{% url 'order'%}?orderid={{order.pk}}" style="color:lawngreen;">edit</a></i></h1>
     <h4><b>Customer PO</b>{{order.fields.customer_po}}</h4>
     <h4><b>Work Order</b>{{order.fields.customer_po}}</h4>
     <h4>{{order.fields.description}}</h4>
@@ -18,7 +18,7 @@
             <table>
                 <thead>
                     <tr>
-                        <td class="doorheader" colspan="4"><h3><b>Door: "{{door.door}}"</b></h3></td>
+                        <td class="doorheader" colspan="4"><h3 data-name="{{door.door}}"><b>Door: "{{door.door}}"</b></h3></td>
                     </tr>
                     <tr class="headerrow">
                         <td></td>
@@ -27,7 +27,7 @@
                         <td style="font-weight:bold;">Hand</td>
                     </tr>
                     <tr>
-                        <td><i class="material-icons popup-icon" data-id="{{door.id}}"></i></td>
+                        <td><i class="material-icons popup-icon" data-type="door" data-id="{{door.id}}"></i></td>
                         <td>{{door.width}}</td>
                         <td>{{door.height}}</td>
                         <td>{{door.hand}}</td>
@@ -214,6 +214,7 @@
         </div>
     {% endfor %}
 </div>
+<a href="{% url 'deleteorder' order.pk %}">Delete Order</a>
 {% endblock %}
 
 {% block scripts %}

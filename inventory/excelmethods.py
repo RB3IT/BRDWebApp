@@ -60,12 +60,17 @@ def autowidth(worksheet,column):
     Adapted from http://stackoverflow.com/a/39530676
     """
     max_length = 0
-    columnname = column[0].column # Get the column name
+    try:
+        columnname = column[0].column_letter # Get the column name
+    except:
+        ## Merged cell
+        columnname = xlutils.get_column_letter(column[0].column)
     for cell in column:
         try: # Necessary to avoid error on empty cells
             max_length = max(len(str(cell.value)),max_length)
         except: pass
     adjusted_width = (max_length + 2) * 1.2
+    ## Patch 3/6/19: Excel asking for string here for some reason
     worksheet.column_dimensions[columnname].width = adjusted_width
 
 ####################################################################
@@ -239,7 +244,12 @@ def createexcelbyitemsummary(workbook,start,end):
         autowidth(worksheet,column)
 
     for column in list(worksheet.columns)[2:]:
-        worksheet.column_dimensions[column[0].column].width = 16.5
+        try:
+            columnname = column[0].column_letter # Get the column name
+        except:
+            ## Merged cell
+            columnname = xlutils.get_column_letter(column[0].column)
+        worksheet.column_dimensions[columnname].width = 16.5
 
     ## Add Conditional Formatting
     ## Only conditional format when we have 2 or more months to compare

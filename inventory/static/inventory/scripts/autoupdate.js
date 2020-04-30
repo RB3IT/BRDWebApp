@@ -15,21 +15,19 @@ function autoUpdate() {
                 if (quantity == null) {
                     quantity = "None";
                 } else {
-                    try {
-                        quantity = quantity.toFixed(2);
-                    } catch (err) {
-                    };
-                };
+                    try { quantity = quantity.toFixed(2); }
+                    catch { undefined; }   
+                }
                 $input.val(quantity);
             }
-            showSnackbar({ alerttype: "success", text: "Successfully updated " + description });
+            showSnackbar({ type: "success", text: "Successfully updated " + description });
         },
         "json"
     ).fail(
         function (response) {
             let original = $input.attr('value');
             $input.val(original);
-            showSnackbar({ alerttype: "danger", label: "Failure!", text: "Failed to update " + description + " (" + response.status + "): Refresh the Webpage" });
+            showSnackbar({ type: "danger", label: "Failure!", text: "Failed to update " + description + " (" + response.status + "): Refresh the Webpage" });
         }
         );
 

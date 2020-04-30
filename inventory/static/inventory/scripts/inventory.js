@@ -10,5 +10,11 @@ $(document).ready(function () {
             $(this).blur();
         };
     });
-
+    $(".autoblur").keypress(enterBlur);
 });
+
+function enterBlur(event) {
+    if (event.which == 13) {
+        $(this).blur();
+    };
+}

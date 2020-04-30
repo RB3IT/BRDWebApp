@@ -19,7 +19,7 @@
     <script src="{% static 'core/scripts/security.js' %}"></script>
     <script>
         {% if coilerror %}
-        showSnackbar({ alerttype: "danger", label: "Invalid Coil", text: "Try rescanning" });
+        showSnackbar({ type: "danger", label: "Invalid Coil", text: "Try rescanning" });
         {% endif %}
     </script>
 {% endblock %}

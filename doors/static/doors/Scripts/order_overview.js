@@ -1,6 +1,6 @@
 var POPUPSHELL = `
 <div id="popup" class="floating popup">
-</div>`
+</div>`;
 
 $(document).ready(function () {
     bind_popups();
@@ -12,7 +12,7 @@ function bind_popups() {
      * to trigger a popup window */
 
     $("i.popup-icon").click(popupWindow);
-};
+}
 
 function popupWindow(event) {
     /* Opens a popup window that displays information about the item selected */
@@ -21,12 +21,24 @@ function popupWindow(event) {
 
     event.preventDefault();
 
-    let parent = ele.parents(".door");
-    let doorid = parent.attr("data-id");
-    let type = ele.attr("data-type");
-    let id = ele.attr("data-id");
-    let content;
+    let data,doorid, id, type;
+    if (ele.attr("data-type") !== "door") {
+        let parent = ele.parents(".door");
+        doorid = parent.attr("data-id");
+        type = ele.attr("data-type");
+        id = ele.attr("data-id");
+    }
+    else {
+        data = {name:ele.parents("thead").find("h3[data-name]").first().attr("data-name")};
+        doorid = ele.attr("data-id");
+        type = "door";
+        id = doorid;
+    }
+    let content, callback;
     switch (type) {
+        case "door":
+            content = popupDoor(ele);
+            break;
         case "pipe":
             content = popupPipe(ele);
             callback = populatePipe;
@@ -42,17 +54,17 @@ function popupWindow(event) {
         case "slats":
             content = popupSlats(ele);
             callback = populateSlats;
-            break
+            break;
         case "bottombar":
             content = popupBottombar(ele);
             callback = populateBottombar;
-    };
+    }
     
     if (!content) {
         /* This code should never fire */
         popup.remove();
         throw new Error("Did not generate any content");
-    };
+    }
     popup.html(content);
     $("body").append(popup);
 
@@ -65,18 +77,34 @@ function popupWindow(event) {
         let target = e.target;
         popup.remove();
         $(document).unbind("click.popup");
-    };
+    }
 
-    $.ajax({
-        url: "componentapi",
-        success: function(data){ callback(data, type, popup); },
-        data: {doorid:doorid, id:id,type:type}
-    }).fail(failPopup);
+    if (callback) {
+        $.ajax({
+            url: "/doors/order/api/component",
+            success: function (data) { callback(data, type, popup); },
+            data: { doorid: doorid, id: id, type: type }
+        }).fail(failPopup);
+    }
+    else if (type ==="door"){
+        populateDoor(data,doorid, popup);
+    }
 
     $(document).on("click.popup", destroypopup);
     return false;
-};
+}
 
+function popupDoor(ele) {
+    /* Templates the popup for Door */
+    let content = `
+<table class="popup-table">
+    <caption></caption>
+    <tbody>
+    </tbody>
+</table>
+`;
+    return content;
+}
 
 function popupPipe(ele) {
     /* Templates the popup for a Pipe */
@@ -114,7 +142,7 @@ function popupPipe(ele) {
     let springs = parseInt(ele.parents("tr").first().find("td").slice(index).text());
     if (!Number.isInteger(springs)) {
         springs = 0;
-    };
+    }
     for (let i = 0; i < springs; i++) {
         let springele = $(`
 <table class="popup-table" data-type="spring">
@@ -133,6 +161,10 @@ function popupPipe(ele) {
             <td data-value="outerdiameter"></td>
         </tr>
         <tr>
+            <td>Length</td>
+            <td data-value="coiledlength"></td>
+        </tr>
+        <tr>
             <td>Stretch</td>
             <td data-value="stretch"></td>
         </tr>
@@ -140,10 +172,14 @@ function popupPipe(ele) {
 </table>
 `);
         content.append(springele);
-    };
+    }
+
+    content.append(
+        $(`<button type="btn" data-value="springsetter"> Set Springs </button>`)
+    );
 
     return content;
-};
+}
 
 function popupTracks(ele) {
     /* Templates the popup for Tracks */
@@ -184,9 +220,9 @@ function popupTracks(ele) {
         <textarea style="display:none;" data-type="holepattern" readonly />
     </tbody>
 </table>
-`)
-    return brackets.add(angles)
-};
+`);
+    return brackets.add(angles);
+}
 
 function popupHood(ele) {
     /* Templates the popup for Hood */
@@ -207,9 +243,9 @@ function popupHood(ele) {
     </tr>
     <textarea style="display:none;" data-type="description" readonly />
 </table>
-`
+`;
     return content;
-};
+}
 
 function popupSlats(ele) {
     /* Templates the popup for Slats */
@@ -252,9 +288,9 @@ function popupSlats(ele) {
         <td data-type="endlockquantity"></td>
     </tr>
 </table>
-`
+`;
     return content;
-};
+}
 
 function popupBottombar(ele) {
     /* Templates the popup for Bottombar */
@@ -282,19 +318,22 @@ function popupBottombar(ele) {
         <td data-type="bottom_rubber"></td>
     </tr>
 </table>
-`
+`;
     return content;
-};
+}
+
+function populateDoor(data,doorid, popup) {
+    /* Populates the current Door Popup for the door id */
+    popup.find("caption").first().text(data.name);
+    let tbody = popup.find("tbody").first();
+    tbody.append($(`<tr>
+    <td><a href="/doors/orderinfo/sketches/${doorid}">View Shop Drawings</a></td>
+</tr>`));
+}
 
 function populatePipe(data,model,popup) {
     /* Populates the current Pipe Popup with data from the API */
     table = popup.find("table.popup-table:has(caption:contains(Pipe))");
-
-    if ([data.pipelength, data.pipediameter, data.shaftlength, data.shaftdiameter].some(d => d == "Auto")) {
-        popup.append(
-            $(`<button type="btn" onclick="setSprings(${data.doorid})"> Set Springs </button>`)
-        );
-    };
 
     table.find('td[data-value="pipelength"]').html(data.pipelength);
     table.find('td[data-value="pipediameter"]').html(data.pipediameter);
@@ -305,14 +344,19 @@ function populatePipe(data,model,popup) {
         springtables = popup.find("table.popup-table[data-type=spring]");
         for (let i = 0; i < data.springs; i++) {
             let stable = springtables.slice(i,i+1);
-            if (!stable) { break; };
+            if (!stable) { break; }
+            console.log(data.assembly[i]);
             stable.find('td[data-value="springtype"]').html(data.assembly[i].springtype);
             stable.find('td[data-value="wirediameter"]').html(data.assembly[i].wirediameter);
             stable.find('td[data-value="outerdiameter"]').html(data.assembly[i].outerdiameter);
+            stable.find('td[data-value="coiledlength"]').html(data.assembly[i].coiledlength);
             stable.find('td[data-value="stretch"]').html(data.assembly[i].stretch);
-        };
-    };
-};
+        }
+    }
+
+    console.log(popup.find('button[data-value="springsetter"]'))
+    popup.find('button[data-value="springsetter"]').attr('onclick', `setSprings(${data.doorid})`);
+}
 
 function populateTracks(data, model, popup) {
     /* Populates the current Tracks Popup with data from the API */
@@ -326,14 +370,14 @@ function populateTracks(data, model, popup) {
     if (data['weatherstripping']) {
         weather = $('<i class="material-icons true-icon"></i>');
     }
-    else { weather = $('<i class="material-icons false-icon"></i>'); };
+    else { weather = $('<i class="material-icons false-icon"></i>'); }
     table.find('td[data-type="weatherstripping"]').append(weather);
     let pattern = data['hole_pattern'];
     if (pattern) {
         let text = table.find('td[data-type="holepattern"]').val(pattern).css("display","block");
-    };
+    }
     
-};
+}
 
 function populateHood(data, model, popup) {
     /* Populates the current Hood Popup with data from the API */
@@ -344,14 +388,13 @@ function populateHood(data, model, popup) {
     if (data['baffle']) {
         baffle = $('<i class="material-icons true-icon"></i>');
     }
-    else { baffle = $('<i class="material-icons false-icon"></i>'); };
+    else { baffle = $('<i class="material-icons false-icon"></i>'); }
     table.find('td[data-type="baffle"]').append(baffle);
     let description = data['description'];
     if (description) {
         let text = table.find('td[data-type="description"]').val(description).css("display", "block");
-    };
-
-};
+    }
+}
 
 function populateSlats(data, model, popup) {
     /* Populates the current Slats Popup with data from the API */
@@ -364,7 +407,7 @@ function populateSlats(data, model, popup) {
     if (data['assemble']) {
         assemble = $('<i class="material-icons true-icon"></i>');
     }
-    else { assemble = $('<i class="material-icons false-icon"></i>'); };
+    else { assemble = $('<i class="material-icons false-icon"></i>'); }
     table.find('td[data-type="assembly"]').append(assemble);
 
     let endlocktable = popup.find('table.popup-table[data-type="endlocks"]');
@@ -377,7 +420,7 @@ function populateSlats(data, model, popup) {
         if (data['endlockcontinuous']) {
             endlockcont = $('<i class="material-icons true-icon"></i>');
         }
-        else { endlockcont = $('<i class="material-icons false-icon"></i>'); };
+        else { endlockcont = $('<i class="material-icons false-icon"></i>'); }
         table.find('td[data-type="endlockcont"]').append(endlockcont);
 
         table.find('td[data-type="endlockquantity"]').html(data['endlockquantity']);
@@ -390,9 +433,9 @@ function populateSlats(data, model, popup) {
     <td>${windlocks}</td>
 </tr>
 `));
-        };
-    };
-};
+        }
+    }
+}
 
 function populateBottombar(data, model, popup) {
     /* Populates the current Bottombar Popup with data from the API */
@@ -414,27 +457,27 @@ function populateBottombar(data, model, popup) {
     </tr>
 `);
         table.append(slopeinfo);
-    };
-};
+    }
+}
 
 function failPopup(data) {
     /* Shows an Error Message and closes the Popup window */
     $("div.popup").remove();
     $(document).unbind("click.popup");
-    showSnackbar({ alerttype: "warning", label: "Popup Error", text: `Failed to get Popup Data: ${data.responseText}` })
-};
+    showSnackbar({ type: "warning", label: "Popup Error", text: `Failed to get Popup Data: ${data.responseText}` });
+}
 
 function setSprings(doorid) {
     /* Sends a request to the server to calculate the stats on the given door */
 
     window.location.href = `/doors/springs/${doorid}`;
-};
+}
 
 function failUpdate(data) {
     /* Shows an Error Message when the Door fails to update */
-    if (Math.floor(data.status / 100) == 5) {
+    if (Math.floor(data.status / 100) === 5) {
         showSnackbar({ alertype: "warning", label: "Calculation Failure", text: `Failed to AutoCalculate Door: ${data.responseText}` });
     } else {
-        showSnackbar({ alertype: "warning", label: "Calculation Failure", text: `Failed to AutoCalculate Door: ${data.status} ${data.statusText}` })
+        showSnackbar({ alertype: "warning", label: "Calculation Failure", text: `Failed to AutoCalculate Door: ${data.status} ${data.statusText}` });
     }
-};
+}

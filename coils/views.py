@@ -24,12 +24,40 @@ from django.contrib.auth.decorators import login_required
 
 ## This Module
 from . import models
+from inventory import models as inventorymodels
 
 ## Third Party
 from PIL import Image ## [pillow] Used for QR Printing
 
 ## Standard American Month Format for output
 MONTHFORMAT = "%m/%d/%Y"
+
+def process(coil):
+    """ Coil Serialization method """
+    def og_coil(c):
+        out = {"pk":c.pk,'size':c.size,'weight':round(c.weight,2), 'width':c.width}
+        if c.finished:
+            out['stage'] = 'Finished'
+            out['date'] = c.finished.strftime(MONTHFORMAT)
+        elif c.opened:
+            out['stage'] = 'Opened'
+            out['date'] = c.opened.strftime(MONTHFORMAT)
+        elif c.received:
+            out['stage'] = 'Received'
+            out['date'] = c.received.strftime(MONTHFORMAT)
+        else:
+            out['stage'] = "Unknown"
+            out['date'] = "N/A"
+        return out
+    if isinstance(coil,models.SteelCoil):
+        out = og_coil(coil)
+    else:
+        out = {"coil":og_coil(coil.coil)}
+        out['width'] = coil.width
+        out['weight'] = coil.weight
+        out['item'] = coil.item.pk
+        out['pk'] = coil.pk
+    return out
 
 class CoilHome(dviews.TemplateView):
     """ Coil Homepage """
@@ -77,7 +105,6 @@ def viewcoil(request,coil):
     """ Displays the stats of a coil """
 
     coilobj = get_object_or_404(models.SteelCoil,pk = coil)
-
     return render(request,'coils/viewcoil.html', {"coil":coilobj, 'coilqr':f"{reverse('get_coil_qr')}?coil={coil}"})
 
 @decorators.require_GET
@@ -93,6 +120,17 @@ def get_coil_qr(request):
 
 class OutputCoils(dviews.TemplateView):
     template_name = "coils/outputcoils.html"
+
+class EditCoil(dviews.TemplateView):
+    template_name = "coils/editcoil.html"
+    def get_context_data(self,coil = None,errors = None, **kw):
+        ## Get payload
+        context = super().get_context_data(**kw)
+        coil = get_object_or_404(models.SteelCoil,pk = coil)
+        context['coil'] = coil
+        context['errors'] = errors
+        return context
+
 
 @login_required
 def scancoil(request):
@@ -132,31 +170,21 @@ def get_coil_list(request):
             return dhttp.HttpResponseBadRequest(f'Invalid pagestart')
 
     if pagestart:
-        coils = models.SteelCoil.objects.filter(pk__lte=pagestart).order_by("-pk","-recieved")
+        coils = models.SteelCoil.objects.filter(pk__lte=pagestart).order_by("-pk","-received")
     else:
-        coils = models.SteelCoil.objects.all().order_by("-pk","-recieved")
+        coils = models.SteelCoil.objects.all().order_by("-pk","-received")
+        if coils:
+            pagestart = coils[0].pk
 
     start = page*pagesize
     coils = coils[start:start+pagesize]
-
-    def process(coil):
-        out = {"pk":coil.pk,'size':coil.size,'weight':round(coil.weight,2)}
-        if coil.finished:
-            out['stage'] = 'Finished'
-            out['date'] = coil.finished.strftime(MONTHFORMAT)
-        elif coil.opened:
-            out['stage'] = 'Opened'
-            out['date'] = coil.opened.strftime(MONTHFORMAT)
-        elif coil.recieved:
-            out['stage'] = 'Recieved'
-            out['date'] = coil.recieved.strftime(MONTHFORMAT)
-        else:
-            out['stage'] = "Unknown"
-            out['date'] = "N/A"
-        return out
+    if len(coils) < pagesize:
+        nextpage = False
+    else:
+        nextpage = page + 1
 
     output = list(map(process,coils))
-    return dhttp.JsonResponse({"result":"success","coils":output})
+    return dhttp.JsonResponse({"result":"success","coils":output, "pagestart":pagestart, "nextpage":nextpage})
 
 @decorators.require_GET
 @login_required
@@ -182,6 +210,25 @@ def get_coil_printout(request):
     response = dhttp.HttpResponse(base64.b64encode(sheet.read()), content_type = "application/pdf")
     return response
 
+class CoilStats(dviews.TemplateView):
+    template_name = "coils/coilstats.html"
+    def get_context_data(self,**kw):
+        ## Get payload
+        context = super().get_context_data(**kw)
+        data = self.request.GET
+        coils = data.get("coils",None)
+        coils = base64.b64decode(coils)
+        coils = json.loads(coils.decode())
+        coils = sorted([get_object_or_404(models.SteelCoil,pk = coil) for coil in coils], key = lambda coil: coil.size)
+        sizes = {size: {} for size in sorted(list(set(coil.size for coil in coils)))}
+        for size,results in sizes.items():
+            scoils = [coil for coil in coils if coil.size == size]
+            results['coils'] = scoils
+            results['count'] = len(scoils)
+            results['total_weight'] = sum([coil.weight for coil in scoils])
+        context['sizes'] = sizes
+        return context
+
 @decorators.require_POST
 @login_required
 @csrf.csrf_exempt
@@ -204,6 +251,53 @@ def post_coilstatus(request):
         output = coil.finished
     coil.save()
     return dhttp.JsonResponse({"result":"success","date":output})
+
+@decorators.require_POST
+@login_required
+@csrf.csrf_exempt
+def post_coilupdate(request):
+    """ Flags the coil's status """
+    data = request.POST
+    errors = None
+    coil = data.get("pk",None)
+    coil = models.SteelCoil.objects.filter(pk = coil).first()
+    if not coil:
+       errors = f"No Such coil {pk}"
+       return dhttp.JsonResponse({"result":"failure","errors":errors})
+    else:
+        errors = []
+        size = data.get("size",None)
+        try: size = float(size)
+        except: pass
+        if isinstance(size, (int,float)) and size > 0:
+            coil.size = size
+        elif not size is None:
+            errors.append("size")
+        weight = data.get("weight",None)
+        try: weight = float(weight)
+        except: pass
+        if isinstance(weight,(int,float)) and weight > 0:
+            coil.weight = weight
+        elif not weight is None:
+            errors.append("weight")
+        width = data.get("width",None)
+        try: width = float(width)
+        except: pass
+        if isinstance(width,(int,float)) and width > 0:
+            coil.width = width
+        elif not width is None:
+            errors.append("width")
+        notes = data.get("notes",None)
+        if isinstance(notes, str):
+            coil.notes = notes
+        elif not notes is None:
+            errors.append("notes")
+    if not errors:
+        coil.save()
+        return dhttp.JsonResponse({"result":"success"})
+
+    errors = f"The following fields failed to update: {', '.join(errors)}"
+    return dhttp.JsonResponse({"result":"failure","errors":errors})
 
 def _create_coilprintout(coils):
     """ Takes a list of coils and returns an Image object that represents a """
@@ -315,9 +409,99 @@ def _create_coilprintout(coils):
         pages.append(newpage)
 
     firstpage,pages = pages[0],pages[1:]
-    print(pages)
     output = io.BytesIO()
     firstpage.save(output,"PDF",append_images = pages, save_all = True)
     ## Be kind, Rewind
     output.seek(0)
     return output
+
+@decorators.require_GET
+@login_required
+def get_coils(request):
+    """ Returns stats for the current (unfinished) coils """
+    data = request.GET
+    size = data.get("size")
+    kw = {}
+    if size in ("5.28","5.34"):
+        kw['size'] = float(size)
+    coils = [process(coil) for coil in models.SteelCoil.objects.filter(finished = None,**kw).order_by("-pk","-received")]
+    return dhttp.JsonResponse({"success":True,"coils":coils})
+
+
+@decorators.require_GET
+@login_required
+def get_inventory_coils(request):
+    """ Returns the coils associated with the given inventory item """
+    data = request.GET
+    itemid = data.get("item")
+    item = get_object_or_404(inventorymodels.Inventory,pk = itemid)
+    coils = models.InventoryCoil.objects.filter(item = item)
+    return dhttp.JsonResponse({"success":True,"coils":[process(coil) for coil in coils]})
+
+@decorators.require_POST
+@login_required
+def post_inventory_coil_width(request):
+    """ Updates a coil's width given the InventoryCoil's PK """
+
+    def handleCoil(coilid,width):
+        """ Get coil by id and update its width """
+        invcoil = get_object_or_404(models.InventoryCoil, pk = coilid)
+        width = float(width)
+        invcoil.width = width
+        invcoil.save()
+
+    data = request.POST
+    coilid,width = data.get("coil"),data.get("width")
+
+    """
+    Array data comes in for "{arrayname}[{index}]"
+    When the element is a dict, this is further flattened to : "{arrayname}[{index}][{key}]"
+    Currently, trying to use "request.POST.getlist([various values])" does not work,
+    so we're going to have to parse by hand.
+    """
+    if coilid is None:
+        coils = []
+        last = True
+        i = 0
+        ## Parse data
+        while last:
+            last = None
+            coil = data.get(f"coils[{i}][coil]")
+            if coil:
+                width = data.get(f"coils[{i}][width]")
+                last = {"coil":coil,"width":width}
+                coils.append(last)
+                i+=1
+
+        if not coils or not isinstance(coils,list):
+            return dhttp.HttpResponseBadRequest("Invalid query")
+        for coil in coils:
+            handleCoil(coil.get("coil"),coil.get("width"))
+    else:
+        handleCoil(coilid,width)
+
+    return dhttp.JsonResponse({"success":True})
+
+@decorators.require_POST
+@login_required
+def post_new_inventory_coil(request):
+    data = request.POST
+    itemid,coilid = data.get("item"),data.get("coil")
+    item = get_object_or_404(inventorymodels.Inventory,pk = itemid)
+    coil = get_object_or_404(models.SteelCoil,pk = coilid)
+    if models.InventoryCoil.objects.filter(item = item, coil = coil):
+        raise dhttp.Http404("Already Exists")
+    invcoil = models.InventoryCoil(item = item, coil = coil, width = coil.width)
+    invcoil.save()
+    return dhttp.JsonResponse({"success":True, "coil":process(invcoil)})
+
+@decorators.require_http_methods(["GET","DELETE"])
+@login_required
+def get_inventory_coil(request,coil):
+    if request.method == "GET":
+        coil = get_object_or_404(models.InventoryCoil,pk = coil)
+        return dhttp.JsonResponse({"success":True,"coil":process(coil)})
+    else: ## request.method == "DELETE"
+        coil = get_object_or_404(models.InventoryCoil,pk = coil)
+        coil.delete()
+        return dhttp.JsonResponse({"success":True})
