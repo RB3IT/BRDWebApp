@@ -1,0 +1,9 @@
+django
+numpy
+opencv
+pillow
+pyzbar
+pyqrcode
+pypng
+openpyxl
+inflect
