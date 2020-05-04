@@ -1,0 +1,34 @@
+﻿{% extends "kiosk/layout.html"%}
+{% block styles %}
+<style>
+    .menuitem {
+        padding: .5em;
+        margin: .5em;
+        border: 1px solid #000000;
+        min-height: 25vh;
+        min-width: 33vw;
+        max-width: 45vw;
+        -moz-box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
+        -webkit-box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
+        box-shadow: inset 2px 2px 2px rgba(255, 255, 255, .4), inset -2px -2px 2px rgba(0, 0, 0, .4);
+        align-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+        .menuitem > a {
+            font-size: clamp(5rem, 10vh, 1rem);
+        }
+
+        .menuitem:active {
+        -moz-box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
+        -webkit-box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
+        box-shadow: inset 2px 2px 2px rgba(0,0,0,.4);
+        }
+</style>{% endblock %}
+{% block content %}
+<div style="display:flex;flex-wrap:wrap">
+    <div class="menuitem"><a href="{% url "kioskhardwarehome" %}">Hardware</a></div>
+    <div class="menuitem"><a href="{% url "kioskspringshome" %}">Springs</a></div>
+</div>
+{% endblock %}

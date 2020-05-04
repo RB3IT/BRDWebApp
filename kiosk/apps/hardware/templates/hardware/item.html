@@ -1,0 +1,143 @@
+﻿{% extends "hardware/home.html" %}
+{% load staticfiles %}
+
+{% block styles %}
+<style>
+    .button {
+        display:block;
+    }
+        .button:active {
+            filter:brightness(85%);
+        }
+        .button.add:before {
+            content: "add_circle";
+            color: lawngreen;
+        }
+        .button.remove:before {
+            content: "remove_circle";
+            color:red;
+        }
+        
+    .big {
+        font-size:5rem;
+    }
+    input.big {
+        max-height:5rem;
+    }
+    div.big {
+        width: 5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="width:100%;text-align:center;">{{item.description}}</h1>
+<h4 style="width:fit-content;border:groove;margin:auto; padding:.5rem;font-size:xx-large;">Count: <span id="count"></span></h4>
+<div style="display:flex;flex-wrap:wrap;">
+    <div class="big" style="margin:auto auto;">
+        <i id="plus1" class="big button material-icons add" onclick="update(1);"></i>
+        <span class="big" style="display:block;text-align:center;">1</span>
+        <i id="minus1" class="big button material-icons remove"onclick="update(-1);"></i>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;margin:auto auto;">
+        <i id="plusx" class="big button material-icons add"onclick="updatex(this);"></i>
+        <input id="changeinput" class="big" type="number" min="0" step=".01" value="10" style="text-align:center;" onblur="roundChange();"/>
+        <i id="minusx" class="big button material-icons remove"onclick="updatex(this);"></i>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts%}
+<script src="{% static 'core/scripts/security.js' %}"></script>
+<script>
+    var PLUS1, MINUS1, PLUSX, MINUSX, CHANGE, COUNT;
+    var SUMS = "";
+
+    /**
+     * Update Inventory by the given value
+     * @param {Number} value - Value to offset the inventory by
+     */
+    function update(value) {
+        console.log(value);
+    };
+
+    /**
+     * Updates the Inventory by the offset in the #changeinput depending
+     * on whether #plusx or #minusx  was clicked
+     * @param {Element} ele - Element that was pushed (#plusx/#minx)
+     */
+    function updatex(ele) {
+        let val = ele === PLUSX ? CHANGE.value : CHANGE.value * -1;
+        update(val);
+    };
+
+    /**
+     * Save Inventory Object's pk and sums for reference and update #count
+     * @param {any} data - response from api
+     * */
+    function updateCount(data){
+        console.log(data);
+        COUNT.dataset.inventory = data.object.pk;
+        SUMS = data.object.sums ? data.object.sums : "";
+        loadCount(data.object.count);
+    }
+
+    /**
+     * Sets count to the given amount
+     * (NOTE: might be superfluous at this point)
+     * @param {any} count
+     */
+    function loadCount(count) {
+        COUNT.innerText = count;
+    }
+
+    /**
+     * Limit change to 2 decimal places
+     * @param {Event} e
+     */ 
+    function roundChange(e){
+        CHANGE.value = ((CHANGE.value*100).toPrecision(15)/100).toFixed(2)
+    }
+
+    (function () {
+    PLUS1 = document.getElementById("plus1");
+    MINUS1 = document.getElementById("minus1");
+    PLUSX = document.getElementById("plusx");
+    MINUSX = document.getElementById("minusx");
+    CHANGE = document.getElementById("changeinput");
+    COUNT = document.getElementById("count");
+
+    /**
+     * If current count fails, loads last month's inventory count
+     * @param {any} e
+     */
+    function loadPrevious(e) {
+        /**
+         * Create a new Inventory Object and set it's count to last month's (0 if last month's failed)
+         * @param {any} data - response from $.get({lastmonth inventory})
+         * */
+        function createNew(data) {
+            console.log(data, data.object);
+            let value = data.object !== undefined ? data.object.quantity : 0;
+
+            /**
+             * Update the new Object's quantity and sums via api
+             * quantity and sums will be the same value
+             * @param {any} data - response from the Inventory Creation API
+             * */
+            function updateNew(data){
+                $.post("{% url "inventory_update" %}", { itemid: "{{item.pk}}", date: "{{thismonth}}", quantity: value, sums: `${value}`}, updateCount);
+            }
+
+            $.post("{% url "get_or_create_inventory" item.pk thismonth %}", {}, updateNew)
+        }
+        
+        $.get("{% url "get_or_create_inventory" item.pk lastmonth %}").always(createNew);
+    }
+
+    $.get("{% url "get_or_create_inventory" item.pk thismonth %}", {}, loadCount).fail(loadPrevious);
+})();
+
+
+</script>
+{% endblock %}

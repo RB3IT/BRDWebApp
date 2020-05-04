@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BRD Services</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" type="text/css" href="{% static 'core/content/bootstrap4.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'core/content/site.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'kiosk/content/common.css' %}" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    <div class="nav-bar">
+        <i class="material-icons nav-icon{% if not request.user.is_authenticated %} bad{% endif %}"><a href="{% if not request.user.is_authenticated %}{% url "kiosklogin" %}{% else %}{% url "kiosklogout" %}{% endif %}">person</a></i><i class="material-icons nav-icon"><a href="{% url "kioskhome" %}">home</a></i>{% block navbar %}{% endblock %}
+    </div>
+    <div class="container body-content" style="padding-top:1em;">
+    {% block content %}{% endblock %}
+    </div>
+    <script type="text/javascript" src="{%static 'core/scripts/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'core/scripts/modernizr-2.6.2.js' %}"></script>
+    <script src="{% static 'core/scripts/bootstrap.min.js' %}"></script>
+    <script src="{% static 'core/scripts/respond.js' %}"></script>
+    <script src="{% static 'core/scripts/snackbar.js' %}"></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>
