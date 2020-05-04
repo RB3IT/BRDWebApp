@@ -1,0 +1,56 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<h3>Edit Spring {{spring.pk}}</h3>
+<input type="hidden" name="pk" value="{{spring.pk}}" />
+<table>
+    <tr>
+        <td>Size</td>
+        <td>
+            <select name="size">
+                {% for size in sizes %}
+                <option value="{{size}}"{% if spring.size == size %} selected{% endif %}>{{size}}</option>
+                {% endfor %}
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td>Length</td>
+        <td><input type="number" name="length" value="{{spring.length}}"/></td>
+    </tr>
+    <tr>
+        <td>Notes</td>
+        <td><textarea name="notes" value="{{spring.notes}}"></textarea></td>
+    </tr>
+</table>
+<button type="button" onclick="updateSpring();">Submit</button>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'core/scripts/security.js' %}"></script>
+<script>
+    function updateSpring() {
+        /* Send data to update API */
+        data = {
+            pk: {{spring.pk}},
+            size: $("select[name='size']").val(),
+            length: $("input[name='length']").val(),
+            notes: $("textarea[name='notes']").val()
+        };
+        $.post("{% url "springupdate" %}", data, callback);
+    };
+    function callback(data){
+        /* On Success, redirect to ViewSpring */
+        if(data.result == "success"){
+           window.location.href = "{% url 'viewspring' spring=spring.pk %}";
+        }else{
+            showSnackbar({ type: "danger", label: "Failed to Update", text: data.errors });
+        }
+    };
+</script>
+{% endblock %}
