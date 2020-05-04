@@ -133,7 +133,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="coils\migrations\" />
-    <Folder Include="coils\migrations\__pycache__\" />
     <Folder Include="coils\static\" />
     <Folder Include="coils\static\coils\" />
     <Folder Include="coils\static\coils\content\" />
@@ -171,6 +170,7 @@
     <Folder Include="inventory\static\inventory\" />
     <Folder Include="inventory\static\inventory\content\" />
     <Folder Include="inventory\static\inventory\fonts\" />
+    <Folder Include="inventory\static\inventory\images\" />
     <Folder Include="inventory\static\inventory\scripts\" />
     <Folder Include="inventory\templates\" />
     <Folder Include="inventory\templates\inventory\" />
@@ -212,8 +212,6 @@
   <ItemGroup>
     <Content Include=".gitattributes" />
     <Content Include=".gitignore" />
-    <Content Include="coils\migrations\__pycache__\0001_initial.cpython-36.pyc" />
-    <Content Include="coils\migrations\__pycache__\__init__.cpython-36.pyc" />
     <Content Include="coils\static\coils\fonts\glyphicons-halflings-regular.eot" />
     <Content Include="coils\static\coils\fonts\glyphicons-halflings-regular.svg" />
     <Content Include="coils\static\coils\fonts\glyphicons-halflings-regular.ttf" />
@@ -273,6 +271,10 @@
     <Content Include="inventory\static\inventory\fonts\glyphicons-halflings-regular.svg" />
     <Content Include="inventory\static\inventory\fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="inventory\static\inventory\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="inventory\static\inventory\images\hardwarecase.jpg" />
+    <Content Include="inventory\static\inventory\images\leftarrow.png" />
+    <Content Include="inventory\static\inventory\images\list.png" />
+    <Content Include="inventory\static\inventory\images\rightarrow.png" />
     <Content Include="inventory\static\inventory\scripts\autocalc.js" />
     <Content Include="inventory\static\inventory\scripts\autoupdate.js" />
     <Content Include="inventory\static\inventory\scripts\coilwidget.js" />
