@@ -1,0 +1,112 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        div.centerall {
+            text-align:center;
+        }
+        div.centerall>* {
+            margin-left:auto;
+            margin-right:auto;
+        }
+        table>caption {
+            font-size:2em;
+            font-weight:bold;
+        }
+        table.headersleft td:first-child {
+    font-weight: bold;
+}
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="centerall">
+        <div class="beveled menu-item" style="background-color:yellow;color:#080808;" onclick="toggleUseSpring();">
+            Use Spring
+        </div>
+        <div id="usespring" style="display:none;">
+            <form class="form-inline" method="post">{% csrf_token %}<input type="hidden" name="pk" value="{{spring.pk}}"/><label for="springused">Length (inches)<input id="springused" class="form-control" name="length" type="number" min="0.0" step=".0625"/></label><input type="submit"/></form>
+            <table>
+                <tbody>
+                    <tr><td>1/16</td><td>.0625</td></tr>
+                    <tr><td>1/8</td><td>.125</td></tr>
+                    <tr><td>3/16</td><td>.1875</td></tr>
+                    <tr><td>1/4</td><td>.25</td></tr>
+                    <tr><td>5/16</td><td>.3125</td></tr>
+                    <tr><td>3/8</td><td>.375</td></tr>
+                    <tr><td>7/16</td><td>.4375</td></tr>
+                    <tr><td>1/2</td><td>.5</td></tr>
+                    <tr><td>9/16</td><td>.5625</td></tr>
+                    <tr><td>5/8</td><td>.625</td></tr>
+                    <tr><td>11/16</td><td>.6875</td></tr>
+                    <tr><td>3/4</td><td>.75</td></tr>
+                    <tr><td>13/16</td><td>.8125</td></tr>
+                    <tr><td>7/8</td><td>.875</td></tr>
+                    <tr><td>15/16</td><td>.9375</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <table class="headersleft">
+            <caption style="caption-side:top;text-align:center;">Spring {{spring.pk}}<i class="material-icons"><a class="beveled" href="editspring/{{spring.pk}}" style="text-decoration: none;color:greenyellow; background-color:beige; padding:3px; border-radius:25px;">edit</a></i></caption>
+            <tbody>
+                <tr>
+                    <td>Size</td>
+                    <td>{{spring.size}}</td>
+                </tr>
+                <tr>
+                    <td>Length</td>
+                    <td>{{spring.length}}</td>
+                </tr>
+                <tr>
+                    <td>Date Received</td>
+                    <td>{{spring.received}}</td>
+                </tr>
+                <tr>
+                    <td>Date Finished</td>
+                    <td><span id="finishspan">{{spring.finished}}</span></td>
+                    <td><button type="button" id="finishbutton" onclick='finishSpring()'{% if spring.finished %} disabled{% endif %}>Scrap Remainder</button></td>
+                </tr>
+                <tr>
+                    <td>Notes</td>
+                    <td><textarea id="notes">{{spring.notes}}</textarea></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'core/scripts/security.js' %}"></script>
+<script>
+    var pk = {{spring.pk}};
+    var errors = {{errors | safe}};
+    function finishSpring(){
+        /* Check in with the API signifying the spring finished state */
+        $.post("{% url "springstate" %}", { spring : pk , state : "finished"  }, function(data){ success(data,"finished"); });
+    };
+    function success(data,state){
+        /* Shows that the API has been successful posted to */
+        if (data.result=="success"){
+            showSnackbar({ type: "success", label: "Success", text: `spring is ${state}ed` });
+            let btn = $(`#${state}button`);
+            let spn = $(`#${state}span`);
+            btn.prop("disabled",true);
+            spn.text(data.date);
+        };
+    };
+
+    function toggleUseSpring(){
+        let div = document.getElementById("usespring");
+        if(div.style.display === "none"){div.style.display = "";}
+        else{div.style.display = "none";};
+    };
+
+    $(document).ready(function(){
+        $("#notes").prop("readonly",true);
+        for(let error of errors){
+            if(error === "length") showSnackbar({ type: "danger", label: "Invalid Length", text: "must be greater than 0 and a multiple of 1/16 " });
+    }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:center;">
+    <div style="display:block">
+    <span style="font-size:3em; font-family:'Trebuchet MS';">Tools</span>
+    <div style="display:flex;">
+        <a class="nonlink" href="{% url 'springregistry' %}">
+            <div class="beveled menu-item" style="background-color:red;color:#fefefe;">
+                Register Spring
+            </div>
+        </a>
+        <a class="nonlink" href="{% url 'outputspring' %}">
+            <div class="beveled menu-item" style="background-color:yellow;color:#080808;">
+                List Springs
+            </div>
+        </a>
+    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

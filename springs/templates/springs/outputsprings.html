@@ -1,0 +1,61 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        #springTable {
+            margin-right:auto;
+            margin-left:auto;
+            margin-top:1em;
+        }
+            #springTable td,th {
+                padding-left:.5em;
+                padding-right:.5em;
+                text-align:center;
+            }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div style="text-align:center;">
+        <h1>Output Springs</h1>
+        <div class="floatleft">
+            <button id="statsButton" type="button" onclick="getStats();">Stats</button>
+        </div>
+        <div class="floatleft">
+            <label><input type="checkbox" id="received" class="filter" value="Received" onchange="filterSprings();" checked/>Received</label>
+            <label><input type="checkbox" id="finished" class="filter" value="Finished" onchange="filterSprings();" checked/>Finished</label>
+        </div>
+        <div class="floatleft">
+            {% for size in sizes %}
+            <label><input type="checkbox" id="{{size}}" class="filter" value="{{size}}" onchange="filterSprings();" data-filter="size" checked />{{size}}</label>
+            {% endfor %}
+        </div>
+        <table id="springTable">
+            <thead>
+                <tr>
+                    <th><input id="outputSelectall" type="checkbox" onchange="selectAll();" /></th>
+                    <th>ID</th>
+                    <th>Size</th>
+                    <th>Length</th>
+                    <th>Stage</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <button id="loadmorebtn" type="button" onclick="loadSprings()">Load More</button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'core/scripts/security.js' %}"></script>
+    <script src="{% static 'springs/scripts/springoutput.js' %}"></script>
+    <script>
+        var page = 0;
+        var pagestart = null;
+        var loadingFlag = false;
+        $(document).ready(loadSprings);
+    </script>
+{% endblock %}
