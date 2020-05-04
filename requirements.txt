@@ -1,9 +1,8 @@
 django
 numpy
-opencv
+opencv-python
 pillow
 pyzbar
 pyqrcode
-pypng
 openpyxl
 inflect
