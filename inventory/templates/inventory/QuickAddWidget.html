@@ -1,0 +1,17 @@
+﻿{% load staticfiles %}
+<div class="inlineclear column">
+    <div style="padding:5px">
+        <div>
+            <span class="subheading"> Quick Add: <span id="autoCalcTotal">0</span></span>
+            <button onclick="autoCalcToTotal()">Commit Value</button>
+        </div>
+        <div id="calcholder" style="padding:5px;"></div>
+    </div>
+    <div style="clear:both;padding:5px">
+        <span class="subheading"">Notes:</span><br />
+        <textarea class="autoupdate" id="notes" rows="10" cols="100" value="{{item.usernotes}}"
+                    data-itemid="{{item.itemid}}"
+                    data-attribute="usernotes" data-description="{{item.description}}"></textarea>
+    </div>
+</div>
+<script src="{% static 'inventory/scripts/autocalc.js' %}" defer></script>

@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        .page {
+            position: absolute;
+            left:0;       
+            width: 100vw;
+        }
+            .page.hidden{
+                left:-100%;
+                display:none;
+            }
+        a.nav {
+            display:block;
+            text-decoration:none;
+            margin: 5px;
+            color: chocolate;
+        }
+            a.nav::before{
+                content:"⮚";
+                padding-right:2px;
+            }
+        form > label{
+            display:block;
+            margin-bottom:3px;
+        }
+        form > label > *{
+            margin-left:.5em;
+        }
+    </style>
+</head>
+<body>
+    <div id="home" class="page">
+        <h2>Get Door Stats</h2>
+        <a class="nav" href="#loaddoor">Load Door <i>(selected door will not be modified)</i></a>
+        <a class="nav" href="#generatedoor">Generate Door</a>
+    </div>
+
+    <div id="loaddoor" class="page hidden">
+        <h2>Select a Door</h2>
+
+        <a class="nav" href="#home" style="vertical-align:bottom;text-align:right;">Back</a>
+    </div>
+
+    <div id="generatedoor" class="page hidden">
+        <h2>Generate Door</h2>
+        <form id="genDoorForm">
+            <label>Slat Type<select name="slattype"><option value="NY">New York</option><option value="BRD">BRD</option><option value="CRN">Crown</option></select></label>
+            <label>Clear Width<input name="clearopening_width" type="text" class="measureit" /></label>
+            <label>Clear Height<input name="clearopening_height" type="text" class="measureit" /></label>
+            <label>Cast Endlocks<input name="castendlocks" type="checkbox" /></label>
+            <button type="button" onclick="getDoor();">Generate Door</button>
+        </form>
+        <a class="nav" href="#home" style="vertical-align:bottom;text-align:right;">Back</a>
+    </div>
+
+    <script type='text/javascript' src='/static/core/scripts/jquery-3.3.1.min.js' %}'></script>
+    <script src="/static/core/scripts/slidesite.js"></script>
+    <script src="/static/core/scripts/betteregexp/betteregexp.js"></script>
+    <script src="/static/core/scripts/measureit.js"></script>
+    <script defer>var site = new SlideSite(); site.setupLinks(document.body,document.getElementById("home"));var measureit = new MeasureIt();</script>
+    <script>
+        function getDoor(){
+            let output = {}
+            let form = document.getElementById("genDoorForm");
+            for(let ele of form){
+                let value = ele.value;
+                if(ele.type === "checkbox"){ value = ele.checked;}
+                output[ele.name]=value;
+            }
+            output['query'] = ["pipe.shell","turnstoraise","totalturns","hangingweight_closed","hangingweight_open","torqueperturn","requiredtorque_closed","requiredtorque_open"].join()
+
+            var xhr = new XMLHttpRequest();
+            let urlparams  = Object.entries(output).map(([k,v],i) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
+            xhr.open("GET", "/doors/springs/api/all?"+urlparams);
+            xhr.responseType = "json";
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send();
+            xhr.onreadystatechange = function () {
+              if (xhr.readyState === 4) { // 4 === "done"
+                if (xhr.status === 200) {
+                    console.log(xhr,xhr.response);
+                    window.door = xhr.response.door;
+                    Object.assign(window.door,{clearopening_width:output.clearopening_width,clearopening_height:output.clearopening_height,slattype:output.slattype,castendlocks:output.castendlocks});
+                    window.close();
+                } else {
+                  console.log('Error: ' + xhr.status);
+                }
+              }
+            }
+        }
+    </script>
+</body>
+</html>

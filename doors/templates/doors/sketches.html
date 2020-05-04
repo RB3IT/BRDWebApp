@@ -1,0 +1,20 @@
+{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+{% endblock %}
+
+{% block content %}
+<div id="placeholder" style="width:100%;">
+    {% if not doorid %}
+    <h1 style="color:red;text-align:center;">INVALID DOOR</h1>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'doors/scripts/sketches.js' %}"></script>
+<script>
+    var doorid = {{doorid}};
+</script>
+{% endblock %}

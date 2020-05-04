@@ -1,0 +1,84 @@
+{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    {% load custom_tags%}
+    <link rel="stylesheet" type="text/css" href="{% static 'doors/content/doors.css' %}" />
+    <style>
+        table ~ th {
+            font-weight:bold;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+{% comment %}
+Search Syntax:
+    {field}:{single-term}
+    {field}:"{phrase}"
+    text fields (basic text search)- customer, po, wo, description
+    date fields (exact and relative date comparison)- origin, due
+
+    {object}:{field}:{term or "phrase"}
+    
+{% endcomment %}
+
+<form action="">
+    <div class="input-group mb-3">
+      <input type="text" class="form-control" name="q" placeholder="Search Orders..." aria-label="Search keywords"{% if q %}value="{{q}}"{% endif %} />
+      <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="submit"><i class="material-icons">search</i></button>
+      </div>
+    </div>
+</form>
+
+<table id="results">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>PO</th>
+            <th>WO</th>
+            <th>Descr</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+            <tr>
+                <td><a href="/doors/orderinfo/{{order.pk}}"><i class="material-icons">pageview</i></a></td>
+                <td>{{order.customer.name}}</td>
+                <td>{{order.origin_date}}</td>
+                <td>{{order.customer_po}}</td>
+                <td>{{order.work_order}}</td>
+                <td>{{order.description}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if orders.has_other_pages %}
+  <ul class="pagination">
+    {% if orders.has_previous %}
+      <li><a href="?{% url_replace page=orders.previous_page_number %}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&laquo;</span></li>
+    {% endif %}
+    {% for i in orders.paginator.page_range %}
+      {% if orders.number == i %}
+        <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a href="?{% url_replace page=i %}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if orders.has_next %}
+      <li><a href="?{% url_replace page=orders.next_page_number %}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
