@@ -1,0 +1,28 @@
+.nav-bar{
+    position:absolute;
+    left:0;
+    top:0;
+}
+.nav-icon {
+    vertical-align:top;
+    border-bottom-right-radius: 25%;
+    border: 1px solid mediumblue;
+    background-color: dodgerblue;
+    color: white;
+    margin-right:0px;
+}
+
+    nav-icon:hover, .nav-icon:active {
+        font-size: 2em;
+        filter: alpha(50%);
+    }
+
+.nav-icon.bad {
+    background-color: red;
+    border-color: firebrick;
+}
+
+.nav-icon>a{
+    color: white;
+    text-decoration: none;
+}

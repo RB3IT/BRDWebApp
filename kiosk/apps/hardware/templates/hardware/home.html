@@ -1,0 +1,98 @@
+﻿{% extends "kiosk/layout.html"%}
+{% load staticfiles %}
+{% block styles %}
+<style>
+    table {
+        width:100vw;
+    }
+</style>
+{% endblock %}
+{% block navbar%}<i class="material-icons nav-icon"><a href="{% url "kioskhardwarehome" %}">list_alt</a></i>{% endblock %}
+{% block content %}
+<div style="position: fixed; right: 0; top: 0; padding: 1em; background-color: dodgerblue; display: flex; justify-content: center;align-items: center;">
+    <i id="searchicon" class="material-icons" style="color:white;">search</i>
+    <input id="search" type="text" style="display:none;margin-left:1em;"/>
+</div>
+<div class="accordion">
+    Graphical Lookup
+    <div class="accordion-panel">
+        <canvas id="inventorycanvas" style="width:95vw;height:95vh;"></canvas>
+    </div>
+</div>
+<div class="accordion">
+    Table Lookup
+    <div class="accordion-panel">
+        <table id="inventory"></table>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'kiosk/content/pinch-zoom-canvas.js'%}"></script>
+<script src="{% static 'kiosk/content/tapper.js'%}"></script>
+<script src="{% static 'core/scripts/accordion.js' %}"></script>
+<script>
+    var SEARCH, INVENTORY, graphApp;
+    function togglesearch(event) {
+        if (SEARCH.style.display) { SEARCH.style.display = ""; }
+        else { SEARCH.style.display = "none"; }
+    }
+    function hidesearch(event) {
+        SEARCH.style.display = "none";
+    }
+    function autoblur(event) {
+        if (event.key === "Enter") {
+            SEARCH.blur();
+        }
+    }
+    function search(event) {
+        let value = SEARCH.value;
+        console.log('>>>', value);
+    }
+    function loadItems() {
+        while (INVENTORY.firstChild) { INVENTORY.removeChild(INVENTORY.firstChild); }
+
+        function load(data) {
+            for (let item of data.objects) {
+                INVENTORY.insertAdjacentHTML("beforeend", `<tr><td><a href="{% url "kioskhardwareitem" %}?item=${item.pk}">${item.description}</a></td></tr>`);
+            }
+        }
+        $.get("{% url 'api_getitem'%}",{sublocation: "Hardware Storage"},load)
+    }
+
+    class GraphicalApp{
+        constructor(){
+            this.CANVAS = document.getElementById("inventorycanvas");
+            this.CANVAS.addEventListener("tap", this.resolveBin.bind(this));
+
+            this.bins = null;
+
+            this.tapper = new Tapper(this.CANVAS);
+
+            this.pinchZoom = new PinchZoomCanvas({
+	            canvas: this.CANVAS,
+	            path: "{% static "hardware/images/hardwarecase.jpg" %}",
+	            momentum: true,
+	            zoomMax: 2,
+	            doubletap: true
+	            });
+            }
+
+        resolveBin(event){
+            if(!this.bins) this.generateBins();
+        }
+
+        
+    }
+
+    (function () {
+        graphApp = new GraphicalApp();
+
+        INVENTORY = document.getElementById("inventory");
+        SEARCH = document.getElementById("search");
+        SEARCH.addEventListener("keypress", autoblur);
+        SEARCH.addEventListener("blur", (e) => { hidesearch(e); search(e); });
+        document.getElementById("searchicon").addEventListener("click", togglesearch);
+        loadItems();
+    })();
+</script>
+{% endblock %}
