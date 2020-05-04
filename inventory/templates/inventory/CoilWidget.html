@@ -1,0 +1,19 @@
+﻿<div id="coilwidget">
+    <div class="float:left">
+        <button onclick="getOpenCoils();">Get Open Coils</button>
+        <button onclick="addToQuick();">Add to Quick Add</button>
+        <button onclick="clearGetLoadCoils();">Reload</button>
+    </div>
+    <label>
+        <button onclick="getAddCoil(this);">Add Coil</button>
+        <input name="coilid" type="number" min="0" step="1"/>
+    </label>
+    <div id="coilcontainer"></div>
+</div>
+<style>
+    .disabled:before {
+        color:gray;
+        cursor:default;
+    }
+</style>
+<script src="/static/inventory/scripts/coilwidget.js" defer></script>

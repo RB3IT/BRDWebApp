@@ -1,0 +1,65 @@
+﻿{% extends "core/layout.html" %}
+
+{% block styles %}
+    {% load staticfiles %}
+    <style>
+        table {
+            margin-right:auto;
+            margin-left:auto;
+            margin-top:1em;
+        }
+        caption {
+            font:2em bold;
+            color:black;
+        }
+            td,th {
+                padding-left:.5em;
+                padding-right:.5em;
+                text-align:center;
+            }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div style="text-align:center;">
+        <h1>Coils Stats</h1>
+        {% for size,result in sizes.items %}
+        <table class="headersleft">
+            <caption style="caption-side:top;text-align:center;">{{size}} Stats</caption>
+            <tbody>
+                <tr>
+                    <td>Coils</td>
+                    <td>{{result.count}}</td>
+                </tr>
+                <tr>
+                    <td>Total Weight</td>
+                    <td>{{result.total_weight}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <table style="border:1px solid black;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Weight</th>
+                    <th>Stage</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coil in result.coils %}
+                <tr>
+                    <td>{{coil.pk}}</td>
+                    <td>{{coil.weight}}</td>
+                    <td>{{coil.stage}}</td>
+                    <td>{{coil.stage_date|date:'m/d/Y'}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
