@@ -37,18 +37,18 @@
         </tr>
     </thead>
     <tbody>
-        {% for item in supplies%}
+        {% for sitem in supplies%}
         <tr>
-            <td>{{item.name}}</td>
-            <td>{{item.max_quantity}}</td>
-            <td>{{item.reorder_quantity}}</td>
-            <td>{{item.unit}}</td>
+            <td>{{sitem.item.name}}</td>
+            <td>{{sitem.item.max_quantity}}</td>
+            <td>{{sitem.item.reorder_quantity}}</td>
+            <td>{{sitem.item.unit}}</td>
             <td>
-                <input class="autoapi" data-name="{{item.name}}" type="number" min="0" value="{{item.quantity}}"/>
+                <input class="autoapi" data-name="{{sitem.item.name}}" type="number" min="0" value="{{sitem.quantity}}"/>
             </td>
             <td>
                 <label class="icon-checkbox">
-                    <input class="autoflag" data-name="{{item.name}}" type="checkbox"/>
+                    <input class="autoflag" data-name="{{sitem.item.name}}" type="checkbox"/>
                     <i class="material-icons checked" style="color:lawngreen;">assignment_turned_in </i>
                     <i class="material-icons unchecked" style="color:red;">add_shopping_cart </i>
                 </label>
