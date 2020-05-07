@@ -10,6 +10,7 @@
 !/readme.md
 **/settings.py
 /BRDWebApp/supplies.json
+/static/*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
