@@ -67,7 +67,7 @@ def getincludeditems(month):
 #        )
 #    WHERE include = 1;
 #""".format(month = month.strftime(constants.DATEFORMAT)))
-    include = [stock.itemid.itemid for stock in include]
+    include = [stock.itemid.itemid for stock in currentstock]
     out = models.Items.objects.filter(itemid__in=include).order_by('itemindex','description')
     return out
 
