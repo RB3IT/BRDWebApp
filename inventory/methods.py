@@ -55,7 +55,7 @@ def nonnumbersort(invite):
 def getincludeditems(month):
     """ Returns a QuerySet of Items which have the included Flag prior to the given month """
     currentstock = models.Stock.objects.filter(date__lte=month)\
-                                        .annotate(date=djangomodels.Max("date"))\
+                                        .annotate(maxdate=djangomodels.Max("date"))\
                                         .filter(include = True)
 #    include= models.Stock.objects.raw("""
 #    SELECT *
