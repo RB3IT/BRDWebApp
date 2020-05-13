@@ -53,7 +53,7 @@ def to_doorinstance(doorobj):
 
     tracks = doorinstance.settracks()
     if tracksobj:
-        doorinstance.bracketplatesize = tracksobj.brackets.bracket_size
+        doorinstance.bracketplatesize = float(tracksobj.brackets.bracket_size) if tracksobj.brackets.bracket_size else tracksobj.brackets.bracket_size
         if tracksobj.outer_angle_height:
             tracks.outer = tracksobj.outer_angle_height
         if tracksobj.inner_angle_height:
