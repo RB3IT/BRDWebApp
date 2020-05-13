@@ -6,17 +6,22 @@
 *.user
 *.userosscache
 *.sln.docstates
-/*
 !/readme.md
 **/settings.py
 /BRDWebApp/supplies.json
-/static/*
+static/*
+*/migrations
+env/
+media/
+run localapp.py
+db*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*/__pycache__
 *.py[cod]
 
 # C extensions
@@ -289,5 +294,4 @@ paket-files/
 
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
-*.pyc
 *.pyc

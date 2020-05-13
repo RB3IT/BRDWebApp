@@ -6,3 +6,7 @@ pyzbar
 pyqrcode
 openpyxl
 inflect
+gunicorn
+pycryptodome
+psycopg2
+pypng
