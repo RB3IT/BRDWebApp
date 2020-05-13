@@ -6,11 +6,15 @@
 *.user
 *.userosscache
 *.sln.docstates
-/*
 !/readme.md
 **/settings.py
 /BRDWebApp/supplies.json
-/static/*
+static/*
+*/migrations
+env/
+media/
+run localapp.py
+db*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
