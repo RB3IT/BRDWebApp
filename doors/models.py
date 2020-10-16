@@ -3,7 +3,7 @@ from django.db import models
 from django.core import exceptions
 
 ## This Module
-from core import models as coremodels
+from entities import models as entitymodels
 
 ## Sister Module
 from NewDadsDoor import classes
@@ -69,7 +69,7 @@ class Order(models.Model):
     date = models.DateField(auto_now=True)
     origin_date = models.DateField()
     due_date = models.DateField()
-    customer = models.ForeignKey(coremodels.Company, on_delete=models.DO_NOTHING, blank = True)
+    customer = models.ForeignKey(entitymodels.Company, on_delete=models.DO_NOTHING, blank = True)
     customer_po = models.CharField(max_length = 50, blank = True, null = True)
     work_order = models.CharField(max_length = 50, blank = True, null = True)
     description = models.CharField(max_length = 100, blank = True, null = True)

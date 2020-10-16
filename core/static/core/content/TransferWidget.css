@@ -1,0 +1,75 @@
+div.transferwidget {
+    text-align: center;
+}
+
+    div.transferwidget > * {
+        margin: 2px;
+        padding: 2px;
+        display:table-cell;
+    }
+
+.transferwidget > .transferlist {
+    min-width: 50px;
+    list-style-type:none;
+    padding:5px;
+}
+
+.transferwidget > .transferlist.default {
+    border: 1px solid black;
+}
+
+.transferlist {
+    overflow:auto;
+    height: 3em;
+}
+
+.transferlist > li {
+    cursor: context-menu;
+}
+
+.transferlist.default > li.selected {
+    background-color:lightgray;
+}
+
+.transferbutton {
+    border:outset;
+}
+.transferbutton:active{
+    border:inset;
+}
+.transferbutton::after{
+    margin:3px;
+}
+
+.transferbutton:nth-of-type(1)::after {
+    content: "\21D3";
+}
+
+.transferbutton:nth-of-type(2)::after {
+    content: "\21D1";
+}
+
+@media only screen and (min-width: 768px) {
+    /* Desktop Display Settings */
+    div.transferwidget {
+        display: inline-table;
+        align-items: center;
+    }
+    
+    .transferbuttonbox {
+        vertical-align:middle;
+    }
+
+    .transferbutton {
+        display: block;
+        margin: 2px auto;
+    }
+
+        .transferbutton:nth-of-type(1)::after {
+            content: "\21D2";
+        }
+
+        .transferbutton:nth-of-type(2)::after {
+            content: "\21D0";
+        }
+}

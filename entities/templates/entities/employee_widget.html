@@ -1,0 +1,44 @@
+<div id="employeewidget-{{widget.name}}" class="floatleft">
+    <select id="employeewidget-{{widget.name}}-all" {% for name, value in widget.attrs.select.items %}{% if value is not False %} {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}{% endif %}{% endfor %}>{% for person in widget.persons %}<option value="{{person.pk}}">{{person.fullname}}</option>{% endif %}</select>
+    <button >>>></button>
+    <div>
+        <span style="display:block;font-style:italic;">Double Click to Remove</span>
+        <select id="employeewidget-{{widget.name}}-selected" {% for name, value in widget.attrs.select.items %}{% if value is not False %} {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}{% endif %}{% endfor %} multiple>{% for person in widget.value %}<option value="{{person.pk}}" selected>{{person.fullname}}</option>{% endif %}</select>
+    </div>
+    <script>
+        {
+            let all = document.getElementById("employeewidget-{{widget.name}}-all");
+            let selected = document.getElementById("employeewidget-{{widget.name}}-selected");
+            
+            // Remove already selected persons from all persons list
+            for (let person of selected.options) {
+                all.querySelector(`option[value=${person.value}]`);
+            }
+
+            function moveItem() {
+                if (!all.selectedIndex || all.selectedIndex === undefined) return;
+                let ele = all.options[all.selectedIndex];
+                all.removeChild(ele);
+                selected.appendChild(ele);
+                ele.selected = true;
+            }
+
+            function removeItem(event) {
+                if (!selected.contains(event.target) || selected === event.target) return;
+                select.removeChild(event.target);
+                all.appendChild(event.target);
+                event.target.selected = false;
+            }
+
+            function noclick(event) {
+                event.stopPropagation();
+                event.preventDefault();
+                return false;
+            }
+
+            all.onclick = moveItem;
+            selected.addEventListener("mousedown", noclick);
+            selected.addEventListener("dblclick", removeItem);
+        }
+    </script>
+</div>

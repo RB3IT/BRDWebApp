@@ -16,6 +16,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = [
+    url(r"^entities/", include("entities.urls")),
     url(r"^inventory/",include("inventory.urls")),
     url(r"^doors/", include("doors.urls")),
     url(r"^tools/", include("tools.urls")),

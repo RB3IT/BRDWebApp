@@ -6,7 +6,6 @@
 ## Backend
 import django.utils.html as dhtml
 ## This package
-from core import models as coremodels
 from . import models
 ## Sister Module
 from NewDadsDoor import classes, methods
