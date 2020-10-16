@@ -1,8 +1,7 @@
 """
-Definition of urls for BRDWebApp.
+Definition of urls for BRDWebApp.entities
 """
 
-from datetime import datetime
 from django.urls import path
 import django.contrib.auth.views
 
@@ -14,6 +13,5 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = [
-    ## url(r"^inventory/api/item$",inventory.views.item_api),
-    path(r"", views.Home.as_view(), name="home"),
+    path(r"api/company", views.API_company)
 ]

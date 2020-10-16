@@ -12,7 +12,7 @@ from django.views import generic as dviews
 from django.views.decorators import http as decorators
 
 ## This Module
-from core import models as coremodels
+from entities import models as entitymodels
 from . import models, search
 from . import ordervalidation as oval
 from . import io as dio
@@ -176,7 +176,7 @@ def ordervalidation(request):
                     customer = output['customer']
 
                     ## Create and Save Items in Order
-                    customer,was_created = coremodels.Company.objects.get_or_create(name = customer)
+                    customer,was_created = entitymodels.Company.objects.get_or_create(name = customer)
                     order = output['job']
                     order.customer = customer
                     order.save()

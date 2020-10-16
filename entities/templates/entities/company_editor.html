@@ -1,0 +1,18 @@
+{% extends "core/layout.html" %}
+
+{% block style %}
+{% endblock%}
+
+
+{% block content %}
+<form method="post" onsubmit="">
+    {% crsf_token %}
+    {{form}}
+    <input type="submit" value="Submit" />
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'core/scripts/security.js' %}"></script>
+{% endblock %}
+
