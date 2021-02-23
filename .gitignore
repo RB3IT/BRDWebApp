@@ -12,6 +12,7 @@
 static/*
 */migrations
 env/
+.env/
 media/
 run localapp.py
 db*
